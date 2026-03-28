@@ -1,8 +1,8 @@
 # Google Maps Scraper Bisnis
 
-Scraper untuk mencari bisnis di Google Maps yang belum memiliki website, kemudian mengambil nomor telepon dan nama toko.
+Scraper untuk mencari bisnis di Google Maps (keyword + lokasi), lalu mengumpulkan **nama** dan **nomor telepon** untuk tempat yang di panel Maps terlihat **belum/tidak punya situs web sendiri**.
 
-**Versi Go** - Lebih cepat dan efisien dibanding versi TypeScript!
+**Versi Go** — satu binary, pakai Chrome lewat [chromedp](https://github.com/chromedp/chromedp).
 
 ## Instalasi
 
@@ -18,36 +18,51 @@ go build -o scraper main.go
 
 ## Menjalankan
 
+### Mode interaktif
+
 ```bash
 go run main.go
 ```
 
-atau jika sudah di-build:
+Program akan meminta **berurutan**:
+
+1. **Keyword / nama yang dicari** (misalnya: `coffee shop`, `rental mobil`)
+2. **Lokasi** (misalnya: `Bandung`, `Jakarta`) — koordinat diambil lewat OpenStreetMap Nominatim
+3. **Target** — berapa banyak listing **tanpa website** yang ingin dikumpulkan (angka ≥ 1). **Enter** = default **10**. Tidak ada batas maksimum dari aplikasi; target besar akan memakan waktu lebih lama.
+
+### Mode CLI (tanpa prompt target jika lengkap)
+
+Argumen terakhir harus **angka** (target), sebelum itu **lokasi**, sisanya **keyword**:
 
 ```bash
-./scraper
+go run main.go rental mobil bandung 30
 ```
+
+- Keyword: `rental mobil`
+- Lokasi: `bandung`
+- Target: `30`
+
+Jika hanya dua argumen (`keyword` dan `lokasi`), target akan ditanya di terminal.
 
 ## Output
 
-Hasil scraping akan disimpan dalam:
-
-- `results.json` - Format JSON
-- `results.csv` - Format CSV
+| File | Isi |
+|------|-----|
+| `results.json` | Semua listing yang lolos filter (nama + telepon jika ada). |
+| `results.csv` | Kolom **Nama Toko** dan **Phone Number** — **hanya baris yang punya nomor telepon**; listing tanpa nomor tidak ditulis ke CSV. |
 
 ## Catatan
 
-- Scraper akan otomatis memfilter coffee shop yang **tidak memiliki website**
-- Hasil akan mencakup nama toko dan nomor telepon (jika tersedia)
-- Pastikan koneksi internet stabil saat menjalankan scraper
-- Browser akan terbuka secara otomatis (headless: false). Untuk production, ubah ke `true` di `controllers/maps_controller.go`
+- Filter **tanpa website** mengikuti apa yang terlihat di panel detail Maps (bukan jaminan 100% akurat).
+- Pastikan **Google Chrome** terpasang, atau set environment variable `CHROME_PATH` ke `chrome.exe` (lihat `controllers/maps_chrome.go`).
+- Browser dibuka **non-headless** secara default. Untuk headless, ubah flag di `controllers/maps_chrome.go` (`chromedp.Flag("headless", true)`).
+- Scraping mematuhi batasan dan perubahan UI Google Maps; hasil bisa bervariasi.
 
 ## Keuntungan Versi Go
 
-- ⚡ **Lebih cepat** - Kompilasi native, tidak perlu runtime
-- 🚀 **Lebih efisien** - Menggunakan goroutines untuk concurrency
-- 💪 **Lebih ringan** - Memory footprint lebih kecil
-- 🔧 **Lebih mudah deploy** - Single binary executable
+- **Binary tunggal** — mudah dibagikan dan dijalankan
+- **Performa native** — tanpa runtime JavaScript terpisah
+- **Kontrol penuh** lewat Go + Chrome DevTools Protocol
 
 ## Ikuti & dukung
 
