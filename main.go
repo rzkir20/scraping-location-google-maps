@@ -39,7 +39,10 @@ func main() {
 	log.Printf("🔍 Keyword: %s\n", keyword)
 	log.Printf("📍 URL: %s\n", searchURL)
 
-	scraper := controllers.NewGoogleMapsScraper()
+	scraper, err := controllers.NewGoogleMapsScraper()
+	if err != nil {
+		log.Fatalf("❌ Browser: %v\n", err)
+	}
 	defer scraper.Close()
 
 	if err := scraper.Init(); err != nil {
