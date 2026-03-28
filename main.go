@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
-	"location/controllers"
 	"log"
 	"net/http"
 	"net/url"
@@ -21,59 +20,18 @@ const (
 )
 
 func main() {
+	if len(os.Args) == 1 {
+		runGUI()
+		return
+	}
+	runCLI()
+}
+
+func runCLI() {
 	keyword, locationName, maxResults := getKeywordLocationAndTarget()
-	if keyword == "" {
-		log.Fatalf("❌ Keyword tidak boleh kosong.\n")
-	}
-	if locationName == "" {
-		log.Fatalf("❌ Nama lokasi wajib diisi (contoh: jakarta, Leuwiliang).\n")
-	}
-	if maxResults < 1 {
-		log.Fatalf("❌ Target harus minimal 1.\n")
-	}
-
-	log.Printf("📍 Mencari koordinat untuk: %s ...\n", locationName)
-	lat, lng, err := geocodeLocation(locationName)
-	if err != nil {
-		log.Fatalf("❌ Geocoding gagal: %v\n", err)
-	}
-	log.Printf("📍 Koordinat: %s, %s\n", lat, lng)
-
-	searchURL := buildSearchURL(keyword, lat, lng)
-	log.Printf("🔍 Keyword: %s\n", keyword)
-	log.Printf("🎯 Target listing (tanpa website): %d\n", maxResults)
-	log.Printf("📍 URL: %s\n", searchURL)
-
-	scraper, err := controllers.NewGoogleMapsScraper()
-	if err != nil {
-		log.Fatalf("❌ Browser: %v\n", err)
-	}
-	defer scraper.Close()
-
-	if err := scraper.Init(); err != nil {
-		log.Fatalf("❌ Error initializing: %v\n", err)
-	}
-
-	stores, summary, err := scraper.ScrapeCoffeeShops(searchURL, maxResults)
-	if err != nil {
-		log.Fatalf("❌ Error scraping: %v\n", err)
-	}
-
-	log.Printf("\n📊 Total tersimpan: %d dari target maks. %d · dilewati (ada website): %d\n",
-		len(stores), summary.TargetMax, summary.WithWebsite)
-	log.Printf("\n📊 Total stores found: %d\n", len(stores))
-	log.Println("\n📋 Results:")
-	for i, store := range stores {
-		log.Printf("%d. %s - Phone: %s\n", i+1, store.Name, getPhoneDisplay(store.Phone))
-	}
-
-	// Save results
-	if err := scraper.SaveToFile(stores, "results.json"); err != nil {
-		log.Printf("⚠️  Error saving JSON: %v\n", err)
-	}
-
-	if err := scraper.SaveToCSV(stores, "results.csv"); err != nil {
-		log.Printf("⚠️  Error saving CSV: %v\n", err)
+	logf := func(s string) { log.Println(s) }
+	if _, err := runScrapeJob(keyword, locationName, maxResults, logf, true); err != nil {
+		log.Fatalf("❌ %v\n", err)
 	}
 }
 

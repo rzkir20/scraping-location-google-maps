@@ -12,16 +12,32 @@ go mod download
 
 ## Build
 
+Seluruh file dalam folder ikut dikompilasi; **jangan** hanya `main.go`:
+
 ```bash
-go build -o scraper main.go
+go build -o scraper .
 ```
+
+Tanpa jendela konsol (Windows): `go build -ldflags="-H windowsgui" -o scraper_gui.exe .`
 
 ## Menjalankan
 
-### Mode interaktif
+### Mode aplikasi grafis (default)
+
+Tanpa argumen — terbuka **jendela aplikasi** (bukan Chrome untuk UI; antarmuka pakai [Gio](https://gioui.org)). Isi keyword, lokasi, dan target, lalu **Mulai scraping**. Untuk mengambil data, **Google Chrome** tetap dibuka otomatis oleh scraper (chromedp), sama seperti sebelumnya.
 
 ```bash
-go run main.go
+go run .
+```
+
+Atau jalankan `scraper` / `scraper_gui.exe` tanpa argumen. Tutup jendela aplikasi jika sudah selesai.
+
+### Mode interaktif (terminal)
+
+Berikan **minimal satu argumen** (kalau tidak ada argumen, mode grafis yang jalan):
+
+```bash
+go run . "coffee shop"
 ```
 
 Program akan meminta **berurutan**:
@@ -35,7 +51,7 @@ Program akan meminta **berurutan**:
 Argumen terakhir harus **angka** (target), sebelum itu **lokasi**, sisanya **keyword**:
 
 ```bash
-go run main.go rental mobil bandung 30
+go run . rental mobil bandung 30
 ```
 
 - Keyword: `rental mobil`
