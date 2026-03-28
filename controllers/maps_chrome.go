@@ -1,0 +1,96 @@
+package controllers
+
+import (
+	"context"
+	"fmt"
+	"log"
+	"os"
+	"path/filepath"
+	"runtime"
+	"strings"
+
+	"github.com/chromedp/chromedp"
+)
+
+func resolveChromeExecPath() (string, error) {
+	if p := strings.TrimSpace(os.Getenv("CHROME_PATH")); p != "" {
+		if _, err := os.Stat(p); err == nil {
+			return p, nil
+		}
+		return "", fmt.Errorf("CHROME_PATH tidak valid atau tidak ditemukan: %s", p)
+	}
+	switch runtime.GOOS {
+	case "windows":
+		candidates := []string{`C:\Program Files\Google\Chrome\Application\chrome.exe`}
+		for _, base := range []string{os.Getenv("ProgramFiles"), os.Getenv("ProgramW6432"), os.Getenv("ProgramFiles(x86)")} {
+			if base == "" {
+				continue
+			}
+			candidates = append(candidates, filepath.Join(base, "Google", "Chrome", "Application", "chrome.exe"))
+		}
+		if local := os.Getenv("LOCALAPPDATA"); local != "" {
+			candidates = append(candidates, filepath.Join(local, "Google", "Chrome", "Application", "chrome.exe"))
+		}
+		for _, c := range candidates {
+			if _, err := os.Stat(c); err == nil {
+				return c, nil
+			}
+		}
+		return "", fmt.Errorf("Google Chrome tidak ditemukan; pasang Chrome atau set CHROME_PATH ke chrome.exe")
+	case "darwin":
+		p := "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+		if _, err := os.Stat(p); err == nil {
+			return p, nil
+		}
+		return "", fmt.Errorf("Google Chrome tidak ditemukan di %s", p)
+	default:
+		for _, p := range []string{"/usr/bin/google-chrome", "/usr/bin/google-chrome-stable", "/opt/google/chrome/chrome"} {
+			if _, err := os.Stat(p); err == nil {
+				return p, nil
+			}
+		}
+		return "", fmt.Errorf("google-chrome tidak ditemukan; set CHROME_PATH")
+	}
+}
+
+func NewGoogleMapsScraper() (*GoogleMapsScraper, error) {
+	chromePath, err := resolveChromeExecPath()
+	if err != nil {
+		return nil, err
+	}
+	opts := append(chromedp.DefaultExecAllocatorOptions[:],
+		chromedp.ExecPath(chromePath),
+		chromedp.Flag("headless", false),
+		chromedp.Flag("disable-gpu", false),
+		chromedp.Flag("disable-dev-shm-usage", false),
+		chromedp.Flag("no-sandbox", true),
+		chromedp.UserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"),
+	)
+
+	allocCtx, _ := chromedp.NewExecAllocator(context.Background(), opts...)
+	ctx, cancel := chromedp.NewContext(allocCtx, chromedp.WithLogf(chromedpLogf))
+
+	return &GoogleMapsScraper{
+		ctx:            ctx,
+		cancel:         cancel,
+		processedNames: make(map[string]bool),
+		processedIDs:   make(map[string]bool),
+	}, nil
+}
+
+func (g *GoogleMapsScraper) Init() error {
+	log.Println("🚀 Starting browser...")
+
+	err := chromedp.Run(g.ctx,
+		chromedp.Navigate("about:blank"),
+	)
+
+	return err
+}
+
+func (g *GoogleMapsScraper) Close() {
+	if g.cancel != nil {
+		g.cancel()
+	}
+	log.Println("🔒 Browser closed")
+}

@@ -9,23 +9,27 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 )
 
 const (
-	baseMapsURL = "https://www.google.com/maps/search/"
-	defaultZoom = "17z"
-	maxResults  = 50
+	baseMapsURL       = "https://www.google.com/maps/search/"
+	defaultZoom       = "17z"
+	defaultMaxResults = 10
 )
 
 func main() {
-	keyword, locationName := getKeywordAndLocationName()
+	keyword, locationName, maxResults := getKeywordLocationAndTarget()
 	if keyword == "" {
 		log.Fatalf("❌ Keyword tidak boleh kosong.\n")
 	}
 	if locationName == "" {
 		log.Fatalf("❌ Nama lokasi wajib diisi (contoh: jakarta, Leuwiliang).\n")
+	}
+	if maxResults < 1 {
+		log.Fatalf("❌ Target harus minimal 1.\n")
 	}
 
 	log.Printf("📍 Mencari koordinat untuk: %s ...\n", locationName)
@@ -37,6 +41,7 @@ func main() {
 
 	searchURL := buildSearchURL(keyword, lat, lng)
 	log.Printf("🔍 Keyword: %s\n", keyword)
+	log.Printf("🎯 Target listing (tanpa website): %d\n", maxResults)
 	log.Printf("📍 URL: %s\n", searchURL)
 
 	scraper, err := controllers.NewGoogleMapsScraper()
@@ -49,11 +54,13 @@ func main() {
 		log.Fatalf("❌ Error initializing: %v\n", err)
 	}
 
-	stores, err := scraper.ScrapeCoffeeShops(searchURL, maxResults)
+	stores, summary, err := scraper.ScrapeCoffeeShops(searchURL, maxResults)
 	if err != nil {
 		log.Fatalf("❌ Error scraping: %v\n", err)
 	}
 
+	log.Printf("\n📊 Total tersimpan: %d dari target maks. %d · dilewati (ada website): %d\n",
+		len(stores), summary.TargetMax, summary.WithWebsite)
 	log.Printf("\n📊 Total stores found: %d\n", len(stores))
 	log.Println("\n📋 Results:")
 	for i, store := range stores {
@@ -77,31 +84,69 @@ func getPhoneDisplay(phone string) string {
 	return phone
 }
 
-func getKeywordAndLocationName() (keyword, locationName string) {
+// getKeywordLocationAndTarget urutan: nama/keyword → lokasi → target jumlah listing.
+// CLI: argumen terakhir angka = target; sebelum itu = lokasi; sisanya = keyword.
+// Contoh: go run main.go rental mobil bandung 30
+func getKeywordLocationAndTarget() (keyword, locationName string, maxResults int) {
 	args := os.Args[1:]
-	if len(args) >= 2 {
-		keyword = strings.TrimSpace(strings.Join(args[:len(args)-1], " "))
-		locationName = strings.TrimSpace(args[len(args)-1])
-		if keyword != "" && locationName != "" {
-			return keyword, locationName
+	reader := bufio.NewReader(os.Stdin)
+
+	if len(args) >= 3 {
+		last := strings.TrimSpace(args[len(args)-1])
+		if n, err := strconv.Atoi(last); err == nil && n > 0 {
+			maxResults = n
+			locationName = strings.TrimSpace(args[len(args)-2])
+			keyword = strings.TrimSpace(strings.Join(args[:len(args)-2], " "))
+			if keyword != "" && locationName != "" {
+				return keyword, locationName, maxResults
+			}
 		}
 	}
-	reader := bufio.NewReader(os.Stdin)
+	if len(args) == 2 {
+		keyword = strings.TrimSpace(args[0])
+		locationName = strings.TrimSpace(args[1])
+		maxResults = readTargetListing(reader, defaultMaxResults)
+		return keyword, locationName, maxResults
+	}
 	if len(args) == 1 {
 		keyword = strings.TrimSpace(args[0])
 	} else if len(args) == 0 {
-		log.Print("🔑 Masukkan keyword pencarian (contoh: coffee shop, restoran): ")
+		log.Print("🔑 Nama / keyword pencarian (contoh: coffee shop, rental mobil): ")
+		kwLine, _ := reader.ReadString('\n')
+		keyword = strings.TrimSpace(kwLine)
+	} else {
+		log.Println("⚠️  Format CLI: <keyword …> <lokasi> <angka_target>  Contoh: rental mobil bandung 30")
+		log.Print("🔑 Nama / keyword pencarian (contoh: coffee shop, rental mobil): ")
 		kwLine, _ := reader.ReadString('\n')
 		keyword = strings.TrimSpace(kwLine)
 	}
 	for {
-		log.Print("📍 Nama lokasi (contoh: jakarta, Leuwiliang, Bogor): ")
+		log.Print("📍 Nama lokasi (contoh: Jakarta, Bandung, Bogor): ")
 		locLine, _ := reader.ReadString('\n')
 		locationName = strings.TrimSpace(locLine)
 		if locationName != "" {
-			return keyword, locationName
+			break
 		}
 		log.Println("⚠️  Nama lokasi tidak boleh kosong.")
+	}
+	maxResults = readTargetListing(reader, defaultMaxResults)
+	return keyword, locationName, maxResults
+}
+
+func readTargetListing(reader *bufio.Reader, fallback int) int {
+	for {
+		log.Printf("🎯 Berapa listing maksimal yang ingin diambil (tanpa website)? [default %d, Enter = default]: ", fallback)
+		line, _ := reader.ReadString('\n')
+		s := strings.TrimSpace(line)
+		if s == "" {
+			return fallback
+		}
+		n, err := strconv.Atoi(s)
+		if err != nil || n < 1 {
+			log.Println("⚠️  Masukkan angka bulat positif, atau Enter untuk default.")
+			continue
+		}
+		return n
 	}
 }
 
