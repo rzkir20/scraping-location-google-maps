@@ -1,5 +1,8 @@
 package main
 
+//go:generate go run ./tools/genicon
+//go:generate go run github.com/tc-hib/go-winres@latest make
+
 import (
 	"bufio"
 	"encoding/json"
@@ -11,6 +14,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"location/gui"
 )
 
 const (
@@ -21,7 +26,7 @@ const (
 
 func main() {
 	if len(os.Args) == 1 {
-		runGUI()
+		gui.RunGUI(RunScrapeJob, defaultMaxResults)
 		return
 	}
 	runCLI()
@@ -30,7 +35,7 @@ func main() {
 func runCLI() {
 	keyword, locationName, maxResults := getKeywordLocationAndTarget()
 	logf := func(s string) { log.Println(s) }
-	if _, err := runScrapeJob(keyword, locationName, maxResults, logf, true); err != nil {
+	if _, err := RunScrapeJob(keyword, locationName, maxResults, logf, true); err != nil {
 		log.Fatalf("❌ %v\n", err)
 	}
 }

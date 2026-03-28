@@ -3,7 +3,6 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"log"
 	"time"
 
 	"location/types"
@@ -47,8 +46,8 @@ func (g *GoogleMapsScraper) dismissBlockingUI(ctx context.Context) {
 
 func (g *GoogleMapsScraper) ScrapeCoffeeShops(url string, maxResults int) ([]types.StoreInfo, ScrapeSummary, error) {
 	summary := ScrapeSummary{TargetMax: maxResults}
-	log.Printf("📍 Navigating to: %s\n", url)
-	log.Printf("📋 Filter: hanya menyimpan yang belum punya website (kuota maks. %d listing)\n", maxResults)
+	g.progressf("📍 Navigating to: %s", url)
+	g.progressf("📋 Filter: hanya menyimpan yang belum punya website (kuota maks. %d listing)", maxResults)
 
 	// Banyak kartu × buka panel butuh waktu; sesuaikan dengan target (tanpa plafon artifisial).
 	scrapeBudget := 10*time.Minute + time.Duration(maxResults)*22*time.Second
@@ -67,7 +66,7 @@ func (g *GoogleMapsScraper) ScrapeCoffeeShops(url string, maxResults int) ([]typ
 
 	g.dismissBlockingUI(scrapeCtx)
 
-	log.Println("⏳ Waiting for search results to load...")
+	g.progressLine("⏳ Waiting for search results to load...")
 	err = chromedp.Run(scrapeCtx,
 		chromedp.Poll(
 			`(function(){
@@ -82,7 +81,7 @@ func (g *GoogleMapsScraper) ScrapeCoffeeShops(url string, maxResults int) ([]typ
 		),
 	)
 	if err != nil {
-		log.Printf("⚠️  Timeout waiting for result links: %v (lanjut mencoba...)\n", err)
+		g.progressf("⚠️  Timeout waiting for result links: %v (lanjut mencoba...)", err)
 	}
 
 	_ = chromedp.Run(scrapeCtx,
@@ -108,13 +107,13 @@ func (g *GoogleMapsScraper) ScrapeCoffeeShops(url string, maxResults int) ([]typ
 			})
 		`, &pageInfo),
 	)
-	log.Printf("📄 Page info: url=%s title=%q hasResults=%v\n", pageInfo.URL, pageInfo.Title, pageInfo.HasResults)
+	g.progressf("📄 Page info: url=%s title=%q hasResults=%v", pageInfo.URL, pageInfo.Title, pageInfo.HasResults)
 
 	stores := []types.StoreInfo{}
 	scrollAttempts := 0
 	maxScrollAttempts := 15
 
-	log.Println("🔍 Scrolling dan mengumpulkan data...")
+	g.progressLine("🔍 Scrolling dan mengumpulkan data...")
 
 	for len(stores) < maxResults && scrollAttempts < maxScrollAttempts {
 		chromedp.Run(scrapeCtx,
@@ -133,7 +132,7 @@ func (g *GoogleMapsScraper) ScrapeCoffeeShops(url string, maxResults int) ([]typ
 			time.Sleep(1 * time.Second)
 			continue
 		}
-		log.Printf("🔎 %d kartu\n", cardCountInt)
+		g.progressf("🔎 %d kartu", cardCountInt)
 
 		for i := 0; i < cardCountInt && len(stores) < maxResults; i++ {
 			cardCtx, cancel := context.WithTimeout(scrapeCtx, 45*time.Second)
@@ -141,24 +140,24 @@ func (g *GoogleMapsScraper) ScrapeCoffeeShops(url string, maxResults int) ([]typ
 			cancel()
 			if err != nil {
 				summary.CardErrors++
-				log.Printf("❌ Kartu %d: %v\n", i, err)
+				g.progressf("❌ Kartu %d: %v", i, err)
 				continue
 			}
 			if store != nil {
 				if store.HasWebsite {
 					summary.WithWebsite++
-					log.Printf("⏭️  Lewati %s (punya website, tidak dimasukkan)\n", store.Name)
+					g.progressf("⏭️  Lewati %s (punya website, tidak dimasukkan)", store.Name)
 					continue
 				}
 				stores = append(stores, *store)
-				log.Printf("✅ [%d] %s - %s\n", len(stores), store.Name, getPhoneDisplay(store.Phone))
+				g.progressf("✅ [%d] %s - %s", len(stores), store.Name, getPhoneDisplay(store.Phone))
 				continue
 			}
 			summary.SkippedOther++
 		}
 
 		scrollAttempts++
-		log.Printf("📊 %d/%d (scroll %d/%d)\n", len(stores), maxResults, scrollAttempts, maxScrollAttempts)
+		g.progressf("📊 %d/%d (scroll %d/%d)", len(stores), maxResults, scrollAttempts, maxScrollAttempts)
 	}
 
 	summary.SavedNoWebsite = len(stores)
@@ -167,21 +166,21 @@ func (g *GoogleMapsScraper) ScrapeCoffeeShops(url string, maxResults int) ([]typ
 }
 
 func (g *GoogleMapsScraper) logScrapeSummary(s ScrapeSummary) {
-	log.Println("")
-	log.Println("========== Ringkasan pencarian ==========")
-	log.Printf("Yang dicari (kuota maks.):     %d listing tanpa website\n", s.TargetMax)
-	log.Printf("Yang tersimpan ke file:        %d listing\n", s.SavedNoWebsite)
-	log.Printf("Dilewati (punya website):      %d listing\n", s.WithWebsite)
-	log.Printf("Gagal proses kartu:            %d kali\n", s.CardErrors)
-	log.Printf("Dilewati lainnya *:            %d kali\n", s.SkippedOther)
-	log.Println("------------------------------------------")
-	log.Println("Penjelasan singkat:")
-	log.Printf("  • Target: mengumpulkan hingga %d usaha yang di Maps terlihat belum/tidak punya situs web sendiri (menurut panel detail).\n", s.TargetMax)
-	log.Printf("  • Tersimpan: %d listing (lolos filter tanpa website).\n", s.SavedNoWebsite)
-	log.Printf("  • Punya website (dilewati): %d listing — tidak dimasukkan CSV/JSON sesuai aturan filter.\n", s.WithWebsite)
+	g.progressLine("")
+	g.progressLine("========== Ringkasan pencarian ==========")
+	g.progressf("Yang dicari (kuota maks.):     %d listing tanpa website", s.TargetMax)
+	g.progressf("Yang tersimpan ke file:        %d listing", s.SavedNoWebsite)
+	g.progressf("Dilewati (punya website):      %d listing", s.WithWebsite)
+	g.progressf("Gagal proses kartu:            %d kali", s.CardErrors)
+	g.progressf("Dilewati lainnya *:            %d kali", s.SkippedOther)
+	g.progressLine("------------------------------------------")
+	g.progressLine("Penjelasan singkat:")
+	g.progressf("  • Target: mengumpulkan hingga %d usaha yang di Maps terlihat belum/tidak punya situs web sendiri (menurut panel detail).", s.TargetMax)
+	g.progressf("  • Tersimpan: %d listing (lolos filter tanpa website).", s.SavedNoWebsite)
+	g.progressf("  • Punya website (dilewati): %d listing — tidak dimasukkan CSV/JSON sesuai aturan filter.", s.WithWebsite)
 	if s.CardErrors > 0 || s.SkippedOther > 0 {
-		log.Printf("  • Sisanya: %d error teknis (panel/timeout), %d skip lain (duplikat nama, data kosong, atau klik tidak jalan).\n", s.CardErrors, s.SkippedOther)
+		g.progressf("  • Sisanya: %d error teknis (panel/timeout), %d skip lain (duplikat nama, data kosong, atau klik tidak jalan).", s.CardErrors, s.SkippedOther)
 	}
-	log.Println("  * Angka “dilewati lainnya” tidak membedakan duplikat vs data kosong.")
-	log.Println("==========================================")
+	g.progressLine("  * Angka “dilewati lainnya” tidak membedakan duplikat vs data kosong.")
+	g.progressLine("==========================================")
 }

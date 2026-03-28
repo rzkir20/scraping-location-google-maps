@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"context"
-	"log"
 	"time"
 
 	"github.com/chromedp/chromedp"
@@ -67,7 +66,7 @@ func (g *GoogleMapsScraper) restoreListAfterDetail(ctx context.Context) {
 	}
 	// NavigateBack sering keluar dari halaman hasil → kartu berikutnya gagal massal; pakai ulang URL pencarian.
 	if g.lastSearchURL != "" {
-		log.Println("⚠️  Daftar hasil belum muncul; muat ulang halaman pencarian...")
+		g.progressLine("⚠️  Daftar hasil belum muncul; muat ulang halaman pencarian...")
 		_ = chromedp.Run(ctx,
 			chromedp.Navigate(g.lastSearchURL),
 			chromedp.WaitVisible("body", chromedp.ByQuery),
@@ -91,6 +90,6 @@ func (g *GoogleMapsScraper) restoreListAfterDetail(ctx context.Context) {
 		time.Sleep(250 * time.Millisecond)
 		return
 	}
-	log.Println("⚠️  Daftar hasil belum muncul (tidak ada URL pencarian tersimpan).")
+	g.progressLine("⚠️  Daftar hasil belum muncul (tidak ada URL pencarian tersimpan).")
 	time.Sleep(500 * time.Millisecond)
 }

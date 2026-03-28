@@ -13,6 +13,8 @@ type GoogleMapsScraper struct {
 	processedNames map[string]bool
 	processedIDs   map[string]bool
 	mu             sync.Mutex
+	// ProgressLog dipasang dari RunScrapeJob (GUI/CLI) agar pesan proses tampil di log aktivitas.
+	ProgressLog func(string)
 }
 
 // ScrapeSummary statistik satu sesi ScrapeCoffeeShops.

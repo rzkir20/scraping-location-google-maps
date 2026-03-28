@@ -1,4 +1,4 @@
-package main
+package gui
 
 import (
 	"errors"
@@ -26,14 +26,18 @@ import (
 	"location/types"
 )
 
-func runGUI() {
+// ScrapeFunc adalah callback ke logika scrape dari package main (tidak bisa import main dari sini).
+type ScrapeFunc func(keyword, locationName string, maxResults int, logf func(string), logStores bool) ([]types.StoreInfo, error)
+
+// RunGUI menjalankan loop Gio di goroutine terpisah lalu app.Main().
+func RunGUI(runScrape ScrapeFunc, defaultMax int) {
 	go func() {
 		w := new(app.Window)
 		w.Option(
 			app.Title("Google Maps Scraper"),
 			app.Size(unit.Dp(680), unit.Dp(820)),
 		)
-		if err := runGioWindow(w); err != nil {
+		if err := runGioWindow(w, runScrape, defaultMax); err != nil {
 			log.Println(err)
 			os.Exit(1)
 		}
@@ -61,10 +65,9 @@ func exportViaDialog(exp *explorer.Explorer, appendLogLine func(string), filenam
 	}()
 }
 
-func runGioWindow(w *app.Window) error {
+func runGioWindow(w *app.Window, runScrape ScrapeFunc, defaultMax int) error {
 	exp := explorer.NewExplorer(w)
 	var kwEd, locEd, tgtEd, logEd widget.Editor
-	var start, btnDownloadCSV, btnDownloadJSON, btnTheme widget.Clickable
 	var dark bool
 	var logMu sync.Mutex
 	var pendingLines []string
@@ -72,6 +75,11 @@ func runGioWindow(w *app.Window) error {
 	var resultRows []types.StoreInfo
 	var busy atomic.Bool
 	var pageScroll layout.List
+	var tableScrollH widget.List
+	var showRescrapeModal bool
+	var start, btnRescrape, btnDownloadCSV, btnDownloadJSON, btnTheme widget.Clickable
+	var btnModalUnduh, btnModalLanjut, btnModalBatal widget.Clickable
+	var btnFollowGitHub, btnFollowTikTok, btnFollowIG widget.Clickable
 
 	kwEd.SingleLine = true
 	locEd.SingleLine = true
@@ -86,13 +94,13 @@ func runGioWindow(w *app.Window) error {
 		if len(lines) == 0 {
 			return
 		}
-		var b strings.Builder
-		b.WriteString(logEd.Text())
+		// Pakai Insert per baris (bukan SetText): Insert mengaktifkan scrollCaret sehingga
+		// viewport mengikuti ke bawah. SetText memindahkan caret ke awal dan sering tidak
+		// meng-scroll ke akhir pada editor read-only.
 		for _, s := range lines {
-			b.WriteString(s)
-			b.WriteByte('\n')
+			logEd.SetCaret(logEd.Len(), logEd.Len())
+			logEd.Insert(s + "\n")
 		}
-		logEd.SetText(b.String())
 	}
 
 	var ops op.Ops
@@ -113,7 +121,50 @@ func runGioWindow(w *app.Window) error {
 				w.Invalidate()
 			}
 
-			if btnTheme.Clicked(gtx) {
+			var beginScrape func()
+			beginScrape = func() {
+				kw := strings.TrimSpace(kwEd.Text())
+				loc := strings.TrimSpace(locEd.Text())
+				tgtStr := strings.TrimSpace(tgtEd.Text())
+				var n int
+				var err error
+				if tgtStr == "" {
+					n = defaultMax
+				} else {
+					n, err = strconv.Atoi(tgtStr)
+				}
+				if err != nil || n < 1 {
+					logEd.SetCaret(logEd.Len(), logEd.Len())
+					logEd.Insert("Isi target dengan angka bulat ≥ 1, atau kosongkan untuk default 10.\n")
+					return
+				}
+				logEd.SetText("")
+				resultMu.Lock()
+				resultRows = nil
+				resultMu.Unlock()
+				busy.Store(true)
+				go func(keyword, location string, target int) {
+					defer func() {
+						busy.Store(false)
+						w.Invalidate()
+					}()
+					stores, err := runScrape(keyword, location, target, appendLogLine, false)
+					resultMu.Lock()
+					if err == nil && stores != nil {
+						resultRows = append([]types.StoreInfo(nil), stores...)
+					} else {
+						resultRows = nil
+					}
+					resultMu.Unlock()
+					if err != nil {
+						appendLogLine(fmt.Sprintf("GAGAL: %v", err))
+					} else {
+						appendLogLine("Selesai. File juga tersimpan sebagai results.json & results.csv di folder aplikasi, atau unduh lewat tombol di bagian Hasil.")
+					}
+				}(kw, loc, n)
+			}
+
+			if btnTheme.Clicked(gtx) && !showRescrapeModal {
 				dark = !dark
 				w.Invalidate()
 			}
@@ -123,48 +174,43 @@ func runGioWindow(w *app.Window) error {
 			}
 			th := modernTheme(pal)
 
-			if start.Clicked(gtx) && !busy.Load() {
-				kw := strings.TrimSpace(kwEd.Text())
-				loc := strings.TrimSpace(locEd.Text())
-				tgtStr := strings.TrimSpace(tgtEd.Text())
-				var n int
-				var err error
-				if tgtStr == "" {
-					n = defaultMaxResults
-				} else {
-					n, err = strconv.Atoi(tgtStr)
+			if showRescrapeModal {
+				if btnModalBatal.Clicked(gtx) {
+					showRescrapeModal = false
 				}
-				if err != nil || n < 1 {
-					logEd.SetText(logEd.Text() + "Isi target dengan angka bulat ≥ 1, atau kosongkan untuk default 10.\n")
-				} else {
-					logEd.SetText("")
+				if btnModalUnduh.Clicked(gtx) {
+					showRescrapeModal = false
+					appendLogLine("Silakan unduh CSV atau JSON di bagian Hasil jika ingin menyimpan data saat ini sebelum mengosongkan form.\n")
+				}
+				if btnModalLanjut.Clicked(gtx) && !busy.Load() {
+					showRescrapeModal = false
 					resultMu.Lock()
 					resultRows = nil
 					resultMu.Unlock()
-					busy.Store(true)
-					go func(keyword, location string, target int) {
-						defer func() {
-							busy.Store(false)
-							w.Invalidate()
-						}()
-						stores, err := runScrapeJob(keyword, location, target, appendLogLine, false)
-						resultMu.Lock()
-						if err == nil && stores != nil {
-							resultRows = append([]types.StoreInfo(nil), stores...)
-						} else {
-							resultRows = nil
-						}
-						resultMu.Unlock()
-						if err != nil {
-							appendLogLine(fmt.Sprintf("GAGAL: %v", err))
-						} else {
-							appendLogLine("Selesai. File juga tersimpan sebagai results.json & results.csv di folder aplikasi, atau unduh lewat tombol di bagian Hasil.")
-						}
-					}(kw, loc, n)
+					logEd.SetText("")
+					kwEd.SetText("")
+					locEd.SetText("")
+					tgtEd.SetText("")
+					appendLogLine("Form dan hasil dikosongkan. Isi kembali lalu klik Mulai scraping.\n")
+					w.Invalidate()
 				}
 			}
 
-			if btnDownloadCSV.Clicked(gtx) && !busy.Load() {
+			if btnRescrape.Clicked(gtx) && !busy.Load() && !showRescrapeModal {
+				resultMu.Lock()
+				has := len(resultRows) > 0
+				resultMu.Unlock()
+				if has {
+					showRescrapeModal = true
+					w.Invalidate()
+				}
+			}
+
+			if start.Clicked(gtx) && !busy.Load() && !showRescrapeModal {
+				beginScrape()
+			}
+
+			if btnDownloadCSV.Clicked(gtx) && !busy.Load() && !showRescrapeModal {
 				resultMu.Lock()
 				rows := append([]types.StoreInfo(nil), resultRows...)
 				resultMu.Unlock()
@@ -178,7 +224,7 @@ func runGioWindow(w *app.Window) error {
 				}
 			}
 
-			if btnDownloadJSON.Clicked(gtx) && !busy.Load() {
+			if btnDownloadJSON.Clicked(gtx) && !busy.Load() && !showRescrapeModal {
 				resultMu.Lock()
 				rows := append([]types.StoreInfo(nil), resultRows...)
 				resultMu.Unlock()
@@ -191,18 +237,44 @@ func runGioWindow(w *app.Window) error {
 				}
 			}
 
+			if btnFollowGitHub.Clicked(gtx) {
+				go func() { _ = openBrowser(FollowURLGitHub) }()
+			}
+			if btnFollowTikTok.Clicked(gtx) {
+				go func() { _ = openBrowser(FollowURLTikTok) }()
+			}
+			if btnFollowIG.Clicked(gtx) {
+				go func() { _ = openBrowser(FollowURLInstagram) }()
+			}
+
 			resultMu.Lock()
 			tableData := append([]types.StoreInfo(nil), resultRows...)
 			resultMu.Unlock()
 
 			scrollContent := func(gtx layout.Context, _ int) layout.Dimensions {
-				logMaxH := gtx.Dp(220)
+				logMaxH := gtx.Dp(300)
 				return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
-					layout.Rigid(labelMuted(th, pal, "Kumpulkan nama & telepon bisnis lokal tanpa website. Gulir halaman ini; Chrome terbuka saat scraping.").Layout),
-					layout.Rigid(layout.Spacer{Height: unit.Dp(16)}.Layout),
+					layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+						gx := gtx
+						if showRescrapeModal {
+							gx = gtx.Disabled()
+						}
+						return labelMuted(th, pal, "Kumpulkan nama & telepon bisnis lokal tanpa website. Gulir halaman ini; Chrome terbuka saat scraping.").Layout(gx)
+					}),
+					layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+						gx := gtx
+						if showRescrapeModal {
+							gx = gtx.Disabled()
+						}
+						return layout.Spacer{Height: unit.Dp(16)}.Layout(gx)
+					}),
 
 					layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-						return roundedCard(gtx, pal.Card, unit.Dp(14), func(gtx layout.Context) layout.Dimensions {
+						gx := gtx
+						if showRescrapeModal {
+							gx = gtx.Disabled()
+						}
+						return roundedCard(gx, pal.Card, unit.Dp(14), func(gtx layout.Context) layout.Dimensions {
 							return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
 								layout.Rigid(sectionTitle(th, pal, "1", "Form pencarian", "Lengkapi tiga field berikut.")),
 								layout.Rigid(layout.Spacer{Height: unit.Dp(18)}.Layout),
@@ -216,10 +288,18 @@ func runGioWindow(w *app.Window) error {
 									return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
 										layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 											gtxBtn := gtx
-											if busy.Load() {
+											if busy.Load() || showRescrapeModal {
 												gtxBtn = gtx.Disabled()
 											}
 											return contrastIconButton(th, &start, iconPlayScrape, "Mulai scraping")(gtxBtn)
+										}),
+										layout.Rigid(layout.Spacer{Height: unit.Dp(8)}.Layout),
+										layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+											gtxBtn := gtx
+											if busy.Load() || len(tableData) == 0 || showRescrapeModal {
+												gtxBtn = gtx.Disabled()
+											}
+											return contrastIconButton(th, &btnRescrape, iconRescrape, "Scraping ulang")(gtxBtn)
 										}),
 										layout.Rigid(layout.Spacer{Height: unit.Dp(6)}.Layout),
 										layout.Rigid(func(gtx layout.Context) layout.Dimensions {
@@ -233,11 +313,24 @@ func runGioWindow(w *app.Window) error {
 							)
 						})
 					}),
-					layout.Rigid(layout.Spacer{Height: unit.Dp(18)}.Layout),
 					layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-						return roundedCard(gtx, pal.LogCard, unit.Dp(14), func(gtx layout.Context) layout.Dimensions {
+						if !showRescrapeModal {
+							return layout.Spacer{Height: unit.Dp(18)}.Layout(gtx)
+						}
+						return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
+							layout.Rigid(layout.Spacer{Height: unit.Dp(18)}.Layout),
+							layout.Rigid(rescrapeConfirmPanel(th, pal, &btnModalUnduh, &btnModalLanjut, &btnModalBatal)),
+							layout.Rigid(layout.Spacer{Height: unit.Dp(18)}.Layout),
+						)
+					}),
+					layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+						gx := gtx
+						if showRescrapeModal {
+							gx = gtx.Disabled()
+						}
+						return roundedCard(gx, pal.LogCard, unit.Dp(14), func(gtx layout.Context) layout.Dimensions {
 							return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
-								layout.Rigid(sectionTitle(th, pal, "2", "Log aktivitas", "Teks langkah & file tersimpan.")),
+								layout.Rigid(sectionTitle(th, pal, "2", "Log aktivitas", "Proses scraping (buka Maps, kartu, ringkasan) — sama seperti log di terminal.")),
 								layout.Rigid(layout.Spacer{Height: unit.Dp(14)}.Layout),
 								layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 									mh := gtx.Constraints.Max.Y
@@ -267,13 +360,25 @@ func runGioWindow(w *app.Window) error {
 							)
 						})
 					}),
-					layout.Rigid(layout.Spacer{Height: unit.Dp(18)}.Layout),
 					layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-						return roundedCard(gtx, pal.LogCard, unit.Dp(14), func(gtx layout.Context) layout.Dimensions {
+						gx := gtx
+						if showRescrapeModal {
+							gx = gtx.Disabled()
+						}
+						return layout.Spacer{Height: unit.Dp(18)}.Layout(gx)
+					}),
+					layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+						gx := gtx
+						if showRescrapeModal {
+							gx = gtx.Disabled()
+						}
+						return roundedCard(gx, pal.LogCard, unit.Dp(14), func(gtx layout.Context) layout.Dimensions {
 							return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
-								layout.Rigid(sectionTitle(th, pal, "3", "Hasil (tabel)", "Nama dan telepon per baris.")),
+								layout.Rigid(sectionTitle(th, pal, "3", "Hasil (tabel)", "Nama, telepon, alamat. Gulir horizontal jika tabel lebih lebar dari jendela.")),
 								layout.Rigid(layout.Spacer{Height: unit.Dp(14)}.Layout),
-								layout.Rigid(resultsTable(th, pal, tableData)),
+								layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+									return resultsTable(th, pal, tableData, &tableScrollH)(gtx)
+								}),
 								layout.Rigid(layout.Spacer{Height: unit.Dp(16)}.Layout),
 								layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 									return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
@@ -281,7 +386,7 @@ func runGioWindow(w *app.Window) error {
 										layout.Rigid(layout.Spacer{Height: unit.Dp(10)}.Layout),
 										layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 											gtxDisabled := gtx
-											if busy.Load() || len(tableData) == 0 {
+											if busy.Load() || len(tableData) == 0 || showRescrapeModal {
 												gtxDisabled = gtx.Disabled()
 											}
 											return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
@@ -307,10 +412,19 @@ func runGioWindow(w *app.Window) error {
 			pageFill(gtx, pal.PageBG, func(gtx layout.Context) layout.Dimensions {
 				return layout.UniformInset(unit.Dp(16)).Layout(gtx, func(gtx layout.Context) layout.Dimensions {
 					return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
-						layout.Rigid(stickyAppBar(th, pal, dark, &btnTheme)),
+						layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+							gx := gtx
+							if showRescrapeModal {
+								gx = gtx.Disabled()
+							}
+							return stickyAppBar(th, pal, dark, &btnTheme)(gx)
+						}),
 						layout.Rigid(layout.Spacer{Height: unit.Dp(12)}.Layout),
 						layout.Flexed(1, func(gtx layout.Context) layout.Dimensions {
 							return pageScroll.Layout(gtx, 1, scrollContent)
+						}),
+						layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+							return followUsFooter(th, pal, &btnFollowGitHub, &btnFollowTikTok, &btnFollowIG)(gtx)
 						}),
 					)
 				})

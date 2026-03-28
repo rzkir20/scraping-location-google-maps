@@ -3,7 +3,6 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -79,7 +78,7 @@ func NewGoogleMapsScraper() (*GoogleMapsScraper, error) {
 }
 
 func (g *GoogleMapsScraper) Init() error {
-	log.Println("🚀 Starting browser...")
+	g.progressLine("🚀 Starting browser...")
 
 	err := chromedp.Run(g.ctx,
 		chromedp.Navigate("about:blank"),
@@ -92,5 +91,5 @@ func (g *GoogleMapsScraper) Close() {
 	if g.cancel != nil {
 		g.cancel()
 	}
-	log.Println("🔒 Browser closed")
+	g.progressLine("🔒 Browser closed")
 }

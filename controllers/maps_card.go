@@ -133,7 +133,18 @@ func (g *GoogleMapsScraper) processCard(index int, ctx context.Context) (*types.
 					if (h.indexOf('http') === 0 && h.length > 10) { hasWebsite = true; break; }
 				}
 			}
-			return JSON.stringify({ name: name, phone: phone, hasWebsite: hasWebsite });
+			var address = '';
+			var addrBtn = document.querySelector('button[data-item-id="address"]') ||
+				document.querySelector('button[data-item-id*="address"]');
+			if (addrBtn) {
+				var row = addrBtn.querySelector('.Io6YTe');
+				if (row) address = (row.textContent || '').trim();
+				if (!address) {
+					var al = (addrBtn.getAttribute('aria-label') || '').trim();
+					if (al) address = al.replace(/^[^:]+:\s*/i, '').trim();
+				}
+			}
+			return JSON.stringify({ name: name, phone: phone, hasWebsite: hasWebsite, address: address });
 		})()
 	`
 	var raw []byte
@@ -144,6 +155,7 @@ func (g *GoogleMapsScraper) processCard(index int, ctx context.Context) (*types.
 	var data struct {
 		Name       string `json:"name"`
 		Phone      string `json:"phone"`
+		Address    string `json:"address"`
 		HasWebsite bool   `json:"hasWebsite"`
 	}
 	if len(raw) > 0 {
@@ -172,6 +184,7 @@ func (g *GoogleMapsScraper) processCard(index int, ctx context.Context) (*types.
 	return &types.StoreInfo{
 		Name:       name,
 		Phone:      strings.TrimSpace(data.Phone),
+		Address:    strings.TrimSpace(data.Address),
 		HasWebsite: data.HasWebsite,
 	}, nil
 }

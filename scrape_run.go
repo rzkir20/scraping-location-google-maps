@@ -8,9 +8,9 @@ import (
 	"location/types"
 )
 
-// runScrapeJob menjalankan geocoding, scrape, dan simpan hasil.
+// RunScrapeJob menjalankan geocoding, scrape, dan simpan hasil.
 // Jika logStores false, daftar per-toko tidak ditulis lewat logf (mis. mode GUI pakai tabel).
-func runScrapeJob(keyword, locationName string, maxResults int, logf func(string), logStores bool) ([]types.StoreInfo, error) {
+func RunScrapeJob(keyword, locationName string, maxResults int, logf func(string), logStores bool) ([]types.StoreInfo, error) {
 	if logf == nil {
 		logf = func(s string) { log.Print(s) }
 	}
@@ -40,6 +40,7 @@ func runScrapeJob(keyword, locationName string, maxResults int, logf func(string
 	if err != nil {
 		return nil, fmt.Errorf("browser: %w", err)
 	}
+	scraper.ProgressLog = logf
 	defer scraper.Close()
 
 	if err := scraper.Init(); err != nil {
@@ -56,7 +57,11 @@ func runScrapeJob(keyword, locationName string, maxResults int, logf func(string
 	if logStores {
 		logf("Hasil:")
 		for i, store := range stores {
-			logf(fmt.Sprintf("%d. %s - Phone: %s", i+1, store.Name, getPhoneDisplay(store.Phone)))
+			addr := store.Address
+			if addr == "" {
+				addr = "N/A"
+			}
+			logf(fmt.Sprintf("%d. %s - Phone: %s - Alamat: %s", i+1, store.Name, getPhoneDisplay(store.Phone), addr))
 		}
 	} else if len(stores) > 0 {
 		logf(fmt.Sprintf("%d listing — lihat tabel di bawah.", len(stores)))
@@ -64,13 +69,9 @@ func runScrapeJob(keyword, locationName string, maxResults int, logf func(string
 
 	if err := scraper.SaveToFile(stores, "results.json"); err != nil {
 		logf(fmt.Sprintf("Error simpan JSON: %v", err))
-	} else {
-		logf("Disimpan: results.json")
 	}
 	if err := scraper.SaveToCSV(stores, "results.csv"); err != nil {
 		logf(fmt.Sprintf("⚠ Error simpan CSV: %v", err))
-	} else {
-		logf("Disimpan: results.csv (hanya baris dengan nomor)")
 	}
 
 	return stores, nil

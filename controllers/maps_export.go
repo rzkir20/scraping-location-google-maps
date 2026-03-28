@@ -4,7 +4,6 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"io"
-	"log"
 	"os"
 	"strings"
 
@@ -25,7 +24,7 @@ func WriteStoresJSON(w io.Writer, stores []types.StoreInfo) error {
 func WriteStoresCSV(w io.Writer, stores []types.StoreInfo) (written, skippedNoPhone int, err error) {
 	writer := csv.NewWriter(w)
 
-	if err := writer.Write([]string{"Nama Toko", "Phone Number"}); err != nil {
+	if err := writer.Write([]string{"Nama Toko", "Phone Number", "Alamat"}); err != nil {
 		return 0, 0, err
 	}
 
@@ -35,7 +34,7 @@ func WriteStoresCSV(w io.Writer, stores []types.StoreInfo) (written, skippedNoPh
 			skippedNoPhone++
 			continue
 		}
-		if err := writer.Write([]string{store.Name, phone}); err != nil {
+		if err := writer.Write([]string{store.Name, phone, strings.TrimSpace(store.Address)}); err != nil {
 			return written, skippedNoPhone, err
 		}
 		written++
@@ -56,7 +55,7 @@ func (g *GoogleMapsScraper) SaveToFile(stores []types.StoreInfo, filename string
 	if err := WriteStoresJSON(f, stores); err != nil {
 		return err
 	}
-	log.Printf("💾 Results saved to: %s\n", filename)
+	g.progressf("💾 Disimpan: %s (JSON)", filename)
 	return nil
 }
 
@@ -77,9 +76,9 @@ func (g *GoogleMapsScraper) SaveToCSV(stores []types.StoreInfo, filename string)
 	}
 
 	if skippedNoPhone > 0 {
-		log.Printf("💾 CSV saved to: %s (%d baris; %d tanpa nomor tidak dimasukkan)\n", filename, written, skippedNoPhone)
+		g.progressf("💾 Disimpan: %s (CSV, %d baris; %d tanpa nomor tidak dimasukkan)", filename, written, skippedNoPhone)
 	} else {
-		log.Printf("💾 CSV saved to: %s\n", filename)
+		g.progressf("💾 Disimpan: %s (CSV)", filename)
 	}
 	return nil
 }
