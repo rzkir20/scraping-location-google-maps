@@ -62,4 +62,3 @@ Kalau repo ini membantu atau kamu suka project-nya, jangan lupa kasih **Star** d
 ## License
 
 Source code berlisensi [MIT License](LICENSE) (Copyright © 2026 Rizki Ramadhan).
-# scraping-location-google-maps

@@ -1,0 +1,23 @@
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+scraper
+scraper.exe
+
+# Test binary
+*.test
+
+# Output files
+results.json
+results.csv
+
+# Environment
+.env
+*.log
+
+# Old TypeScript/Node.js (removed)
+node_modules/
+dist/
