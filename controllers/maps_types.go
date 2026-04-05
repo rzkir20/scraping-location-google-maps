@@ -22,6 +22,7 @@ type ScrapeSummary struct {
 	TargetMax      int
 	SavedNoWebsite int
 	WithWebsite    int
+	NoPhone        int
 	CardErrors     int
 	SkippedOther   int
 }

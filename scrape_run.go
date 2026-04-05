@@ -33,7 +33,7 @@ func RunScrapeJob(keyword, locationName string, maxResults int, logf func(string
 
 	searchURL := buildSearchURL(keyword, lat, lng)
 	logf(fmt.Sprintf("Keyword: %s", keyword))
-	logf(fmt.Sprintf("Target listing (tanpa website): %d", maxResults))
+	logf(fmt.Sprintf("Target listing (tanpa website, wajib ada nomor): %d", maxResults))
 	logf(fmt.Sprintf("URL: %s", searchURL))
 
 	scraper, err := controllers.NewGoogleMapsScraper()
@@ -52,8 +52,8 @@ func RunScrapeJob(keyword, locationName string, maxResults int, logf func(string
 		return nil, fmt.Errorf("scraping: %w", err)
 	}
 
-	logf(fmt.Sprintf("Total tersimpan: %d dari target maks. %d · dilewati (ada website): %d",
-		len(stores), summary.TargetMax, summary.WithWebsite))
+	logf(fmt.Sprintf("Total tersimpan: %d dari target maks. %d · dilewati (website): %d · dilewati (tanpa telepon): %d",
+		len(stores), summary.TargetMax, summary.WithWebsite, summary.NoPhone))
 	if logStores {
 		logf("Hasil:")
 		for i, store := range stores {

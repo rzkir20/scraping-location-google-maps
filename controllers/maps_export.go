@@ -10,6 +10,31 @@ import (
 	"location/types"
 )
 
+// sanitizeCSVField membersihkan teks agar aman untuk CSV/Excel: UTF-8 valid, tanpa NUL, baris baru diratakan.
+func sanitizeCSVField(s string) string {
+	s = strings.ToValidUTF8(strings.TrimSpace(s), "")
+	if s == "" {
+		return ""
+	}
+	var b strings.Builder
+	b.Grow(len(s))
+	for _, r := range s {
+		switch {
+		case r == 0:
+			continue
+		case r == '\r':
+			continue
+		case r == '\n', r == '\t':
+			b.WriteByte(' ')
+		case r < 32:
+			continue
+		default:
+			b.WriteRune(r)
+		}
+	}
+	return strings.TrimSpace(b.String())
+}
+
 // WriteStoresJSON menulis hasil ke writer (mis. dialog Simpan file di GUI).
 func WriteStoresJSON(w io.Writer, stores []types.StoreInfo) error {
 	data, err := json.MarshalIndent(stores, "", "  ")
@@ -20,27 +45,31 @@ func WriteStoresJSON(w io.Writer, stores []types.StoreInfo) error {
 	return err
 }
 
-// WriteStoresCSV menulis CSV ke writer; baris tanpa nomor telepon dilewati (sama seperti SaveToCSV).
-func WriteStoresCSV(w io.Writer, stores []types.StoreInfo) (written, skippedNoPhone int, err error) {
+// WriteStoresCSV menulis CSV ke writer; baris tanpa nomor telepon dilewati.
+func WriteStoresCSV(w io.Writer, stores []types.StoreInfo) (written int, err error) {
 	writer := csv.NewWriter(w)
 
 	if err := writer.Write([]string{"Nama Toko", "Phone Number", "Alamat"}); err != nil {
-		return 0, 0, err
+		return 0, err
 	}
 
 	for _, store := range stores {
-		phone := strings.TrimSpace(store.Phone)
+		phone := sanitizeCSVField(store.Phone)
 		if phone == "" {
-			skippedNoPhone++
 			continue
 		}
-		if err := writer.Write([]string{store.Name, phone, strings.TrimSpace(store.Address)}); err != nil {
-			return written, skippedNoPhone, err
+		name := sanitizeCSVField(store.Name)
+		if name == "" {
+			name = "(tanpa nama)"
+		}
+		row := []string{name, phone, sanitizeCSVField(store.Address)}
+		if err := writer.Write(row); err != nil {
+			return written, err
 		}
 		written++
 	}
 	writer.Flush()
-	return written, skippedNoPhone, writer.Error()
+	return written, writer.Error()
 }
 
 func (g *GoogleMapsScraper) SaveToFile(stores []types.StoreInfo, filename string) error {
@@ -70,15 +99,11 @@ func (g *GoogleMapsScraper) SaveToCSV(stores []types.StoreInfo, filename string)
 	}
 	defer file.Close()
 
-	written, skippedNoPhone, err := WriteStoresCSV(file, stores)
+	written, err := WriteStoresCSV(file, stores)
 	if err != nil {
 		return err
 	}
 
-	if skippedNoPhone > 0 {
-		g.progressf("💾 Disimpan: %s (CSV, %d baris; %d tanpa nomor tidak dimasukkan)", filename, written, skippedNoPhone)
-	} else {
-		g.progressf("💾 Disimpan: %s (CSV)", filename)
-	}
+	g.progressf("💾 Disimpan: %s (CSV, %d baris)", filename, written)
 	return nil
 }

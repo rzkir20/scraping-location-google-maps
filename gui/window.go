@@ -1,6 +1,7 @@
 package gui
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"image"
@@ -57,8 +58,13 @@ func exportViaDialog(exp *explorer.Explorer, appendLogLine func(string), filenam
 			return
 		}
 		defer wc.Close()
-		if err := write(wc); err != nil {
+		var buf bytes.Buffer
+		if err := write(&buf); err != nil {
 			appendLogLine(fmt.Sprintf("Menulis %s gagal: %v\n", filename, err))
+			return
+		}
+		if _, err := wc.Write(buf.Bytes()); err != nil {
+			appendLogLine(fmt.Sprintf("Menyimpan %s ke file gagal: %v\n", filename, err))
 			return
 		}
 		appendLogLine(successMsg)
@@ -148,6 +154,14 @@ func runGioWindow(w *app.Window, runScrape ScrapeFunc, defaultMax int) error {
 						busy.Store(false)
 						w.Invalidate()
 					}()
+					defer func() {
+						if r := recover(); r != nil {
+							resultMu.Lock()
+							resultRows = nil
+							resultMu.Unlock()
+							appendLogLine(fmt.Sprintf("GAGAL (panic): %v\n", r))
+						}
+					}()
 					stores, err := runScrape(keyword, location, target, appendLogLine, false)
 					resultMu.Lock()
 					if err == nil && stores != nil {
@@ -218,7 +232,7 @@ func runGioWindow(w *app.Window, runScrape ScrapeFunc, defaultMax int) error {
 					appendLogLine("Belum ada hasil — jalankan scraping dulu sebelum unduh CSV.\n")
 				} else {
 					exportViaDialog(exp, appendLogLine, "results.csv", func(w io.Writer) error {
-						_, _, err := controllers.WriteStoresCSV(w, rows)
+						_, err := controllers.WriteStoresCSV(w, rows)
 						return err
 					}, "CSV disimpan ke file yang Anda pilih.\n")
 				}
@@ -259,7 +273,7 @@ func runGioWindow(w *app.Window, runScrape ScrapeFunc, defaultMax int) error {
 						if showRescrapeModal {
 							gx = gtx.Disabled()
 						}
-						return labelMuted(th, pal, "Kumpulkan nama & telepon bisnis lokal tanpa website. Gulir halaman ini; Chrome terbuka saat scraping.").Layout(gx)
+						return labelMuted(th, pal, "Kumpulkan bisnis lokal tanpa website yang punya nomor telepon di Maps. Gulir halaman ini; Chrome terbuka saat scraping.").Layout(gx)
 					}),
 					layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 						gx := gtx
@@ -282,7 +296,7 @@ func runGioWindow(w *app.Window, runScrape ScrapeFunc, defaultMax int) error {
 								layout.Rigid(layout.Spacer{Height: unit.Dp(16)}.Layout),
 								layout.Rigid(fieldRow(th, pal, "Wilayah atau kota", "Lokasi dipakai untuk titik di peta", &locEd, "Jakarta")),
 								layout.Rigid(layout.Spacer{Height: unit.Dp(16)}.Layout),
-								layout.Rigid(fieldRow(th, pal, "Target jumlah listing", "Kosongkan untuk pakai default 10; isi angka ≥ 1 jika ingin lain.", &tgtEd, "10")),
+								layout.Rigid(fieldRow(th, pal, "Target jumlah listing", "Tanpa website dan dengan nomor telepon. Kosongkan = default 10; isi angka ≥ 1.", &tgtEd, "10")),
 								layout.Rigid(layout.Spacer{Height: unit.Dp(20)}.Layout),
 								layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 									return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
@@ -382,7 +396,7 @@ func runGioWindow(w *app.Window, runScrape ScrapeFunc, defaultMax int) error {
 								layout.Rigid(layout.Spacer{Height: unit.Dp(16)}.Layout),
 								layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 									return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
-										layout.Rigid(labelMuted(th, pal, "Unduh ke folder pilihan (dialog Simpan). CSV hanya baris ber nomor.").Layout),
+										layout.Rigid(labelMuted(th, pal, "Unduh ke folder pilihan (dialog Simpan). Hanya listing yang punya nomor telepon.").Layout),
 										layout.Rigid(layout.Spacer{Height: unit.Dp(10)}.Layout),
 										layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 											gtxDisabled := gtx

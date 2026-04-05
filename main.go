@@ -98,7 +98,7 @@ func getKeywordLocationAndTarget() (keyword, locationName string, maxResults int
 
 func readTargetListing(reader *bufio.Reader, fallback int) int {
 	for {
-		log.Printf("🎯 Berapa listing maksimal yang ingin diambil (tanpa website)? [default %d, Enter = default]: ", fallback)
+		log.Printf("🎯 Berapa listing maksimal (tanpa website, wajib ada nomor HP)? [default %d, Enter = default]: ", fallback)
 		line, _ := reader.ReadString('\n')
 		s := strings.TrimSpace(line)
 		if s == "" {

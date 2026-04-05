@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"location/types"
@@ -47,7 +48,7 @@ func (g *GoogleMapsScraper) dismissBlockingUI(ctx context.Context) {
 func (g *GoogleMapsScraper) ScrapeCoffeeShops(url string, maxResults int) ([]types.StoreInfo, ScrapeSummary, error) {
 	summary := ScrapeSummary{TargetMax: maxResults}
 	g.progressf("📍 Navigating to: %s", url)
-	g.progressf("📋 Filter: hanya menyimpan yang belum punya website (kuota maks. %d listing)", maxResults)
+	g.progressf("📋 Filter: tanpa website, wajib ada nomor telepon (kuota maks. %d listing)", maxResults)
 
 	// Banyak kartu × buka panel butuh waktu; sesuaikan dengan target (tanpa plafon artifisial).
 	scrapeBudget := 10*time.Minute + time.Duration(maxResults)*22*time.Second
@@ -149,6 +150,11 @@ func (g *GoogleMapsScraper) ScrapeCoffeeShops(url string, maxResults int) ([]typ
 					g.progressf("⏭️  Lewati %s (punya website, tidak dimasukkan)", store.Name)
 					continue
 				}
+				if strings.TrimSpace(store.Phone) == "" {
+					summary.NoPhone++
+					g.progressf("⏭️  Lewati %s (tanpa nomor telepon, tidak dimasukkan)", store.Name)
+					continue
+				}
 				stores = append(stores, *store)
 				g.progressf("✅ [%d] %s - %s", len(stores), store.Name, getPhoneDisplay(store.Phone))
 				continue
@@ -168,16 +174,18 @@ func (g *GoogleMapsScraper) ScrapeCoffeeShops(url string, maxResults int) ([]typ
 func (g *GoogleMapsScraper) logScrapeSummary(s ScrapeSummary) {
 	g.progressLine("")
 	g.progressLine("========== Ringkasan pencarian ==========")
-	g.progressf("Yang dicari (kuota maks.):     %d listing tanpa website", s.TargetMax)
+	g.progressf("Yang dicari (kuota maks.):     %d listing (tanpa website + ada telepon)", s.TargetMax)
 	g.progressf("Yang tersimpan ke file:        %d listing", s.SavedNoWebsite)
 	g.progressf("Dilewati (punya website):      %d listing", s.WithWebsite)
+	g.progressf("Dilewati (tanpa telepon):      %d listing", s.NoPhone)
 	g.progressf("Gagal proses kartu:            %d kali", s.CardErrors)
 	g.progressf("Dilewati lainnya *:            %d kali", s.SkippedOther)
 	g.progressLine("------------------------------------------")
 	g.progressLine("Penjelasan singkat:")
-	g.progressf("  • Target: mengumpulkan hingga %d usaha yang di Maps terlihat belum/tidak punya situs web sendiri (menurut panel detail).", s.TargetMax)
-	g.progressf("  • Tersimpan: %d listing (lolos filter tanpa website).", s.SavedNoWebsite)
-	g.progressf("  • Punya website (dilewati): %d listing — tidak dimasukkan CSV/JSON sesuai aturan filter.", s.WithWebsite)
+	g.progressf("  • Target: hingga %d usaha tanpa situs web sendiri dan dengan nomor telepon terlihat di panel.", s.TargetMax)
+	g.progressf("  • Tersimpan: %d listing (lolos filter).", s.SavedNoWebsite)
+	g.progressf("  • Punya website (dilewati): %d — tidak dimasukkan file.", s.WithWebsite)
+	g.progressf("  • Tanpa nomor telepon (dilewati): %d — tidak dimasukkan file.", s.NoPhone)
 	if s.CardErrors > 0 || s.SkippedOther > 0 {
 		g.progressf("  • Sisanya: %d error teknis (panel/timeout), %d skip lain (duplikat nama, data kosong, atau klik tidak jalan).", s.CardErrors, s.SkippedOther)
 	}

@@ -150,7 +150,11 @@ func resultsTable(th *material.Theme, p uiPalette, rows []types.StoreInfo, scrol
 				if addr == "" {
 					addr = "—"
 				}
-				ch = append(ch, layout.Rigid(tableDataRow(th, p, i+1, r.Name, normalizePhoneDisplay(r.Phone), addr)))
+				name := strings.ToValidUTF8(strings.TrimSpace(r.Name), "")
+				if name == "" {
+					name = "—"
+				}
+				ch = append(ch, layout.Rigid(tableDataRow(th, p, i+1, name, normalizePhoneDisplay(r.Phone), addr)))
 			}
 			return layout.Flex{Axis: layout.Vertical}.Layout(gtx, ch...)
 		})
