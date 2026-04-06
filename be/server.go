@@ -8,14 +8,21 @@ import (
 	"strings"
 )
 
-const defaultHTTPAddr = "127.0.0.1:8080"
+func defaultHTTPAddrFromEnv() string {
+	port := strings.TrimSpace(os.Getenv("PORT"))
+	if port == "" {
+		port = "8080"
+	}
+	// Listen on all interfaces by default.
+	return ":" + port
+}
 
 // runHTTPServer mendengarkan di addr (mis. "127.0.0.1:8080") untuk dipanggil dari FE lewat fetch.
 // CORS dev: semua origin http://localhost:* , http://127.0.0.1:* , http://[::1]:* (port bebas, cocok Astro 4321/5173/dll).
-// Produksi: set SCRAPER_CORS_ORIGINS="https://app.example.com" (koma = beberapa origin).
+// Produksi: set CORS_ALLOW_ORIGINS="https://app.example.com" (koma = beberapa origin).
 func runHTTPServer(addr string) {
 	if addr == "" {
-		addr = defaultHTTPAddr
+		addr = defaultHTTPAddrFromEnv()
 	}
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/health", handleHealth)
@@ -24,11 +31,19 @@ func runHTTPServer(addr string) {
 	mux.HandleFunc("/api/scrape/status", handleScrapeStatus)
 
 	handler := withCORS(mux)
-	log.Printf("HTTP API: http://%s  | POST /api/scrape  GET /api/scrape/status?jobId=...\n", addr)
-	log.Printf("FE dev: PUBLIC_API_URL=http://%s npm run dev\n", addr)
+	displayURL := displayBaseURL(addr)
+	log.Printf("HTTP API: %s  | POST /api/scrape  GET /api/scrape/status?jobId=...\n", displayURL)
+	log.Printf("FE dev: PUBLIC_API_URL=%s npm run dev\n", displayURL)
 	if err := http.ListenAndServe(addr, handler); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func displayBaseURL(addr string) string {
+	if strings.HasPrefix(addr, ":") {
+		return "http://localhost" + addr
+	}
+	return "http://" + addr
 }
 
 func handleHealth(w http.ResponseWriter, r *http.Request) {
@@ -43,6 +58,7 @@ func handleHealth(w http.ResponseWriter, r *http.Request) {
 func withCORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		origin := r.Header.Get("Origin")
+		w.Header().Add("Vary", "Origin")
 		if corsAllowOrigin(origin) {
 			w.Header().Set("Access-Control-Allow-Origin", origin)
 			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
@@ -56,12 +72,12 @@ func withCORS(next http.Handler) http.Handler {
 	})
 }
 
-// corsAllowOrigin: jika SCRAPER_CORS_ORIGINS di-set, hanya origin yang terdaftar; jika kosong, izinkan localhost dev (semua port).
+// corsAllowOrigin: jika CORS_ALLOW_ORIGINS di-set, hanya origin yang terdaftar; jika kosong, izinkan localhost dev (semua port).
 func corsAllowOrigin(origin string) bool {
 	if origin == "" {
 		return false
 	}
-	if raw := strings.TrimSpace(os.Getenv("SCRAPER_CORS_ORIGINS")); raw != "" {
+	if raw := strings.TrimSpace(os.Getenv("CORS_ALLOW_ORIGINS")); raw != "" {
 		for _, p := range strings.Split(raw, ",") {
 			if strings.TrimSpace(p) == origin {
 				return true

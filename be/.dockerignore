@@ -1,0 +1,9 @@
+.git
+.gitignore
+.env
+results.csv
+results.json
+node_modules
+tmp
+dist
+bin

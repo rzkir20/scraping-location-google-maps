@@ -1,8 +1,5 @@
 package main
 
-//go:generate go run ./tools/genicon
-//go:generate go run github.com/tc-hib/go-winres@latest make
-
 import (
 	"bufio"
 	"encoding/json"
@@ -15,8 +12,6 @@ import (
 	"strings"
 	"time"
 
-	"location/gui"
-	"location/types"
 )
 
 const (
@@ -32,17 +27,11 @@ func main() {
 		return
 	}
 	if len(os.Args) >= 2 && os.Args[1] == "server" {
-		addr := defaultHTTPAddr
+		addr := defaultHTTPAddrFromEnv()
 		if len(os.Args) >= 3 && strings.TrimSpace(os.Args[2]) != "" {
 			addr = strings.TrimSpace(os.Args[2])
 		}
 		runHTTPServer(addr)
-		return
-	}
-	if len(os.Args) == 1 {
-		gui.RunGUI(func(kw, loc string, max int, logf func(string), logStores bool) ([]types.StoreInfo, error) {
-			return RunScrapeJob(kw, loc, max, logf, logStores, ScrapeJobOptions{})
-		}, defaultMaxResults)
 		return
 	}
 	runCLI()
