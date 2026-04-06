@@ -114,6 +114,7 @@ func (g *GoogleMapsScraper) ScrapeCoffeeShops(url string, maxResults int) ([]typ
 	stores := []types.StoreInfo{}
 	scrollAttempts := 0
 	maxScrollAttempts := 15
+	nextCardIndex := 0
 
 	g.progressLine("🔍 Scrolling dan mengumpulkan data...")
 
@@ -135,8 +136,13 @@ func (g *GoogleMapsScraper) ScrapeCoffeeShops(url string, maxResults int) ([]typ
 			continue
 		}
 		g.progressf("🔎 %d kartu", cardCountInt)
+		if nextCardIndex >= cardCountInt {
+			scrollAttempts++
+			g.progressf("📊 %d/%d (scroll %d/%d)", len(stores), maxResults, scrollAttempts, maxScrollAttempts)
+			continue
+		}
 
-		for i := 0; i < cardCountInt && len(stores) < maxResults; i++ {
+		for i := nextCardIndex; i < cardCountInt && len(stores) < maxResults; i++ {
 			cardCtx, cancel := context.WithTimeout(scrapeCtx, 45*time.Second)
 			store, err := g.processCard(i, cardCtx)
 			cancel()
@@ -159,6 +165,7 @@ func (g *GoogleMapsScraper) ScrapeCoffeeShops(url string, maxResults int) ([]typ
 			}
 			summary.SkippedOther++
 		}
+		nextCardIndex = cardCountInt
 
 		scrollAttempts++
 		g.progressf("📊 %d/%d (scroll %d/%d)", len(stores), maxResults, scrollAttempts, maxScrollAttempts)
