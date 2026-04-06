@@ -9,7 +9,8 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "generate-types": "wrangler types"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.2.2",
@@ -18,6 +19,11 @@
     "tailwindcss": "^4.2.2"
   },
   "devDependencies": {
-    "@types/leaflet": "^1.9.21"
+    "@astrojs/cloudflare": "^13.1.7",
+    "@types/leaflet": "^1.9.21",
+    "wrangler": "^4.80.0"
+  },
+  "overrides": {
+    "vite": "^7"
   }
 }
