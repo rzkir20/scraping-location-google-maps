@@ -59,21 +59,24 @@ func feedReadyPoll() chromedp.Action {
 
 // restoreListAfterDetail menutup panel tempat dan menunggu feed bisa dipakai lagi.
 func (g *GoogleMapsScraper) restoreListAfterDetail(ctx context.Context) {
-	g.closeDetailPanelClicks(ctx)
-	if err := chromedp.Run(ctx, feedReadyPoll()); err == nil {
+	workCtx, cancel := context.WithTimeout(g.ctx, 65*time.Second)
+	defer cancel()
+
+	g.closeDetailPanelClicks(workCtx)
+	if err := chromedp.Run(workCtx, feedReadyPoll()); err == nil {
 		time.Sleep(200 * time.Millisecond)
 		return
 	}
 	// NavigateBack sering keluar dari halaman hasil → kartu berikutnya gagal massal; pakai ulang URL pencarian.
 	if g.lastSearchURL != "" {
 		g.progressLine("⚠️  Daftar hasil belum muncul; muat ulang halaman pencarian...")
-		_ = chromedp.Run(ctx,
+		_ = chromedp.Run(workCtx,
 			chromedp.Navigate(g.lastSearchURL),
 			chromedp.WaitVisible("body", chromedp.ByQuery),
 			chromedp.Sleep(2*time.Second),
 		)
-		g.dismissBlockingUI(ctx)
-		_ = chromedp.Run(ctx,
+		g.dismissBlockingUI(workCtx)
+		_ = chromedp.Run(workCtx,
 			chromedp.Poll(
 				`(function(){
 					var feed = document.querySelector('div[role="feed"]');
@@ -86,7 +89,7 @@ func (g *GoogleMapsScraper) restoreListAfterDetail(ctx context.Context) {
 				chromedp.WithPollingInterval(300*time.Millisecond),
 			),
 		)
-		_ = chromedp.Run(ctx, feedReadyPoll())
+		_ = chromedp.Run(workCtx, feedReadyPoll())
 		time.Sleep(250 * time.Millisecond)
 		return
 	}
