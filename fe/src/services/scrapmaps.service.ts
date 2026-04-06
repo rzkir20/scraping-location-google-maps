@@ -35,25 +35,9 @@ interface ScrapeStatusJson {
   progress?: { saved?: number; target?: number };
 }
 
-/**
- * Base URL API di bundle klien (Vite mengganti `import.meta.env` saat build).
- * Jangan pakai `define:vars` + `import` di `<script>` Astro — outputnya jadi IIFE
- * berisi `import` di dalam function (sintaks tidak valid; skrip tidak jalan).
- */
-function resolveApiBase(): string {
-  const envBase = (import.meta.env.PUBLIC_API_URL as string | undefined)?.trim();
-  if (envBase) return envBase;
+const API_BASE = import.meta.env.PUBLIC_API_URL;
 
-  // Production-safe fallback: call same-origin API when env is not provided.
-  if (typeof window !== "undefined" && window.location?.origin) {
-    return window.location.origin;
-  }
-
-  // Local dev fallback.
-  return "http://127.0.0.1:8080";
-}
-
-export const scrapMapsApiBase = resolveApiBase();
+export const scrapMapsApiBase = API_BASE;
 
 /** Cek /api/health tanpa impor Leaflet (chunk peta tetap terpisah dari pemanggil yang ringan). */
 export function runBackendHealthCheck(
@@ -554,9 +538,7 @@ function collectRows(): { name: string; address: string; phone: string }[] {
   return Array.from(document.querySelectorAll("tr.result-row")).map((row) => ({
     name: row.getAttribute("data-name") || "",
     address:
-      row.getAttribute("data-address") ||
-      row.getAttribute("data-sub") ||
-      "",
+      row.getAttribute("data-address") || row.getAttribute("data-sub") || "",
     phone: row.getAttribute("data-phone") || "",
   }));
 }
@@ -580,9 +562,7 @@ function wireExports() {
     const esc = (s: string) => '"' + String(s).replace(/"/g, '""') + '"';
     const lines = [
       ["name", "address", "phone"].join(","),
-      ...rows.map((r) =>
-        [esc(r.name), esc(r.address), esc(r.phone)].join(","),
-      ),
+      ...rows.map((r) => [esc(r.name), esc(r.address), esc(r.phone)].join(",")),
     ];
     downloadText(
       "maps-scraper-export.csv",
@@ -764,15 +744,15 @@ function errMsg(v: unknown, fallback: string): string {
 
 function createStartScrapeHandler(apiBase: string) {
   return async function startScrapeFromUI() {
-    const kwEl = document.getElementById("input-keyword") as
-      | HTMLInputElement
-      | null;
-    const locEl = document.getElementById("input-location") as
-      | HTMLInputElement
-      | null;
-    const maxEl = document.getElementById("input-max-results") as
-      | HTMLInputElement
-      | null;
+    const kwEl = document.getElementById(
+      "input-keyword",
+    ) as HTMLInputElement | null;
+    const locEl = document.getElementById(
+      "input-location",
+    ) as HTMLInputElement | null;
+    const maxEl = document.getElementById(
+      "input-max-results",
+    ) as HTMLInputElement | null;
     const kw = kwEl?.value?.trim() || "";
     const loc = locEl?.value?.trim() || "";
     const maxRaw = maxEl?.value;
@@ -994,11 +974,9 @@ function createStartScrapeHandler(apiBase: string) {
 export function initScrapMapsDashboard(
   apiBase: string = scrapMapsApiBase,
 ): void {
-  document
-    .getElementById("start-scrape-btn")
-    ?.addEventListener("click", () => {
-      void createStartScrapeHandler(apiBase)();
-    });
+  document.getElementById("start-scrape-btn")?.addEventListener("click", () => {
+    void createStartScrapeHandler(apiBase)();
+  });
 
   document
     .getElementById("map-view-toggle")

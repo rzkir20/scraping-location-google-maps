@@ -4,7 +4,7 @@ import Input from "./ui/Input.astro";
 import Button from "./ui/Button.astro";
 import Label from "./ui/Label.astro";
 
-const apiBase = import.meta.env.PUBLIC_API_URL ?? "http://127.0.0.1:8080";
+const apiBase = import.meta.env.PUBLIC_API_URL as string;
 ---
 
 <div class="flex h-screen w-full overflow-hidden bg-[#0f0f0f]">
