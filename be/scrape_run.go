@@ -10,7 +10,7 @@ import (
 
 // RunScrapeJob menjalankan geocoding, scrape, dan simpan hasil.
 // Jika logStores false, daftar per-toko tidak ditulis lewat logf (mis. mode GUI pakai tabel).
-func RunScrapeJob(keyword, locationName string, maxResults int, logf func(string), logStores bool) ([]types.StoreInfo, error) {
+func RunScrapeJob(keyword, locationName string, maxResults int, logf func(string), logStores bool, opts ScrapeJobOptions) ([]types.StoreInfo, error) {
 	if logf == nil {
 		logf = func(s string) { log.Print(s) }
 	}
@@ -36,11 +36,12 @@ func RunScrapeJob(keyword, locationName string, maxResults int, logf func(string
 	logf(fmt.Sprintf("Target listing (tanpa website, wajib ada nomor): %d", maxResults))
 	logf(fmt.Sprintf("URL: %s", searchURL))
 
-	scraper, err := controllers.NewGoogleMapsScraper()
+	scraper, err := controllers.NewGoogleMapsScraper(opts.Headless)
 	if err != nil {
 		return nil, fmt.Errorf("browser: %w", err)
 	}
 	scraper.ProgressLog = logf
+	scraper.OnProgress = opts.OnProgress
 	defer scraper.Close()
 
 	if err := scraper.Init(); err != nil {

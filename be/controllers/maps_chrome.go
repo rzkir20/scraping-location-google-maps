@@ -52,19 +52,31 @@ func resolveChromeExecPath() (string, error) {
 	}
 }
 
-func NewGoogleMapsScraper() (*GoogleMapsScraper, error) {
+// NewGoogleMapsScraper headless=true: Chrome tanpa jendela (untuk API/server). false: tampilan normal (GUI/CLI).
+func NewGoogleMapsScraper(headless bool) (*GoogleMapsScraper, error) {
 	chromePath, err := resolveChromeExecPath()
 	if err != nil {
 		return nil, err
 	}
 	opts := append(chromedp.DefaultExecAllocatorOptions[:],
 		chromedp.ExecPath(chromePath),
-		chromedp.Flag("headless", false),
-		chromedp.Flag("disable-gpu", false),
-		chromedp.Flag("disable-dev-shm-usage", false),
 		chromedp.Flag("no-sandbox", true),
 		chromedp.UserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"),
 	)
+	if headless {
+		opts = append(opts,
+			chromedp.Flag("headless", true),
+			chromedp.Flag("disable-gpu", true),
+			chromedp.Flag("disable-dev-shm-usage", true),
+			chromedp.WindowSize(1920, 1080),
+		)
+	} else {
+		opts = append(opts,
+			chromedp.Flag("headless", false),
+			chromedp.Flag("disable-gpu", false),
+			chromedp.Flag("disable-dev-shm-usage", false),
+		)
+	}
 
 	allocCtx, _ := chromedp.NewExecAllocator(context.Background(), opts...)
 	ctx, cancel := chromedp.NewContext(allocCtx, chromedp.WithLogf(chromedpLogf))

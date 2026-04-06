@@ -1,210 +1,1283 @@
 ---
-import astroLogo from '../assets/astro.svg';
-import background from '../assets/background.svg';
+const apiBase = import.meta.env.PUBLIC_API_URL ?? "http://127.0.0.1:8080";
 ---
 
-<div id="container">
-	<img id="background" src={background.src} alt="" fetchpriority="high" />
-	<main>
-		<section id="hero">
-			<a href="https://astro.build"
-				><img src={astroLogo.src} width="115" height="48" alt="Astro Homepage" /></a
-			>
-			<h1>
-				To get started, open the <code><pre>src/pages</pre></code> directory in your project.
-			</h1>
-			<section id="links">
-				<a class="button" href="https://docs.astro.build">Read our docs</a>
-				<a href="https://astro.build/chat"
-					>Join our Discord <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 127.14 96.36"
-						><path
-							fill="currentColor"
-							d="M107.7 8.07A105.15 105.15 0 0 0 81.47 0a72.06 72.06 0 0 0-3.36 6.83 97.68 97.68 0 0 0-29.11 0A72.37 72.37 0 0 0 45.64 0a105.89 105.89 0 0 0-26.25 8.09C2.79 32.65-1.71 56.6.54 80.21a105.73 105.73 0 0 0 32.17 16.15 77.7 77.7 0 0 0 6.89-11.11 68.42 68.42 0 0 1-10.85-5.18c.91-.66 1.8-1.34 2.66-2a75.57 75.57 0 0 0 64.32 0c.87.71 1.76 1.39 2.66 2a68.68 68.68 0 0 1-10.87 5.19 77 77 0 0 0 6.89 11.1 105.25 105.25 0 0 0 32.19-16.14c2.64-27.38-4.51-51.11-18.9-72.15ZM42.45 65.69C36.18 65.69 31 60 31 53s5-12.74 11.43-12.74S54 46 53.89 53s-5.05 12.69-11.44 12.69Zm42.24 0C78.41 65.69 73.25 60 73.25 53s5-12.74 11.44-12.74S96.23 46 96.12 53s-5.04 12.69-11.43 12.69Z"
-						></path></svg
-					>
-				</a>
-			</section>
-		</section>
-	</main>
+<div class="flex h-screen w-full overflow-hidden bg-[#0f0f0f]">
+  <!-- Sidebar -->
+  <aside
+    class="w-[min(100%,320px)] sm:w-[320px] h-full bg-[#161616] border-r border-[#2d2d2d] flex flex-col shrink-0 z-30 max-sm:max-h-[40vh] max-sm:border-b max-sm:border-r-0"
+  >
+    <div class="p-6 border-b border-[#2d2d2d] flex items-center gap-3">
+      <div
+        class="w-8 h-8 bg-[#0066cc] rounded-lg flex items-center justify-center"
+      >
+        <iconify-icon icon="lucide:map-pin" class="text-white text-lg"
+        ></iconify-icon>
+      </div>
+      <span class="text-lg font-semibold tracking-tight">MapsScraper Pro</span>
+    </div>
+    <div class="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-8">
+      <section>
+        <label
+          class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3"
+          >Basic Search</label
+        >
+        <div class="space-y-4">
+          <div class="relative">
+            <iconify-icon
+              icon="lucide:search"
+              class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none"
+            ></iconify-icon>
+            <input
+              id="input-keyword"
+              type="text"
+              placeholder="Search business/keywords..."
+              class="w-full bg-[#1f1f1f] border border-[#2d2d2d] rounded-lg py-2 pl-10 pr-4 text-sm focus:outline-none focus:border-[#0066cc] transition-colors text-gray-200 placeholder:text-gray-600"
+            />
+          </div>
+          <div class="relative">
+            <iconify-icon
+              icon="lucide:navigation"
+              class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none"
+            ></iconify-icon>
+            <input
+              id="input-location"
+              type="text"
+              placeholder="Location (e.g. Bandung, Jakarta)"
+              class="w-full bg-[#1f1f1f] border border-[#2d2d2d] rounded-lg py-2 pl-10 pr-4 text-sm focus:outline-none focus:border-[#0066cc] transition-colors text-gray-200 placeholder:text-gray-600"
+            />
+          </div>
+          <div class="relative">
+            <iconify-icon
+              icon="lucide:hash"
+              class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none"
+            ></iconify-icon>
+            <input
+              id="input-max-results"
+              type="number"
+              min="1"
+              max="500"
+              value="10"
+              placeholder="10"
+              title="Target listing (tanpa website, wajib ada nomor telepon)"
+              class="w-full bg-[#1f1f1f] border border-[#2d2d2d] rounded-lg py-2 pl-10 pr-4 text-sm focus:outline-none focus:border-[#0066cc] transition-colors text-gray-200 placeholder:text-gray-600"
+            />
+          </div>
+          <p class="text-[10px] text-gray-500 leading-relaxed">
+            Target = jumlah listing tanpa website + ada nomor (sama seperti
+            aplikasi Go). Dari FE, backend jalan <strong class="text-gray-400"
+              >headless</strong
+            > (tanpa jendela Chrome). Progres tampil di
+            <strong class="text-gray-400">Live tracking</strong> + log.
+          </p>
+        </div>
+      </section>
+      <section>
+        <label
+          class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3"
+          >Filters & Parameters</label
+        >
+        <div class="space-y-4">
+          <div>
+            <div class="flex justify-between text-xs mb-2">
+              <span>Radius</span>
+              <span class="text-[#0066cc] font-medium"
+                ><span id="radius-label">15</span> km</span
+              >
+            </div>
+            <input
+              id="input-radius"
+              type="range"
+              min="1"
+              max="50"
+              value="15"
+              class="w-full accent-[#0066cc]"
+            />
+          </div>
+          <div>
+            <select
+              class="w-full bg-[#1f1f1f] border border-[#2d2d2d] rounded-lg py-2 px-3 text-sm focus:outline-none focus:border-[#0066cc] text-gray-200"
+            >
+              <option>All Categories</option>
+              <option>Restaurants</option>
+              <option>Real Estate</option>
+              <option>Legal Services</option>
+              <option>Dental Clinics</option>
+            </select>
+          </div>
+          <div class="flex gap-2 text-sm">
+            <div
+              class="flex-1 bg-[#1f1f1f] border border-[#2d2d2d] rounded-lg p-2 text-center cursor-pointer hover:border-[#0066cc] transition-colors"
+            >
+              <span class="block text-[10px] text-gray-500 uppercase"
+                >Min Rating</span
+              >
+              <span>4.0+</span>
+            </div>
+            <div
+              class="flex-1 bg-[#1f1f1f] border border-[#2d2d2d] rounded-lg p-2 text-center cursor-pointer hover:border-[#0066cc] transition-colors"
+            >
+              <span class="block text-[10px] text-gray-500 uppercase"
+                >Reviews</span
+              >
+              <span>50+</span>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section>
+        <label
+          class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3"
+          >Bulk Operations</label
+        >
+        <div
+          class="border-2 border-dashed border-[#2d2d2d] rounded-xl p-4 text-center hover:border-[#0066cc] transition-colors group cursor-pointer"
+        >
+          <iconify-icon
+            icon="lucide:upload-cloud"
+            class="text-2xl text-gray-500 group-hover:text-[#0066cc] transition-colors mb-2"
+          ></iconify-icon>
+          <p class="text-xs text-gray-400">Drop CSV for bulk search</p>
+        </div>
+      </section>
+      <section>
+        <details class="group">
+          <summary
+            class="list-none flex justify-between items-center cursor-pointer text-xs font-semibold text-gray-500 uppercase tracking-wider"
+          >
+            Advanced Settings
+            <iconify-icon
+              icon="lucide:chevron-down"
+              class="group-open:rotate-180 transition-transform"></iconify-icon>
+          </summary>
+          <div class="pt-4 space-y-3">
+            <label class="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                class="w-4 h-4 rounded bg-[#1f1f1f] border-[#2d2d2d] text-[#0066cc] focus:ring-0"
+                checked
+              />
+              <span class="text-sm text-gray-400">Skip existing records</span>
+            </label>
+            <label class="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                class="w-4 h-4 rounded bg-[#1f1f1f] border-[#2d2d2d] text-[#0066cc] focus:ring-0"
+              />
+              <span class="text-sm text-gray-400">Scrape email addresses</span>
+            </label>
+          </div>
+        </details>
+      </section>
+    </div>
+    <div class="p-6 border-t border-[#2d2d2d]">
+      <button
+        id="start-scrape-btn"
+        type="button"
+        class="w-full bg-[#0066cc] hover:bg-[#0052a3] text-white font-semibold py-3 rounded-xl transition-all flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(0,102,204,0.3)]"
+      >
+        <iconify-icon icon="lucide:play-circle"></iconify-icon>
+        Start Scraping
+      </button>
+    </div>
+  </aside>
 
-	<a href="https://astro.build/blog/astro-6-beta/" id="news" class="box">
-		<svg width="32" height="32" fill="none" xmlns="http://www.w3.org/2000/svg"
-			><path
-				d="M24.667 12c1.333 1.414 2 3.192 2 5.334 0 4.62-4.934 5.7-7.334 12C18.444 28.567 18 27.456 18 26c0-4.642 6.667-7.053 6.667-14Zm-5.334-5.333c1.6 1.65 2.4 3.43 2.4 5.333 0 6.602-8.06 7.59-6.4 17.334C13.111 27.787 12 25.564 12 22.666c0-4.434 7.333-8 7.333-16Zm-6-5.333C15.111 3.555 16 5.556 16 7.333c0 8.333-11.333 10.962-5.333 22-3.488-.774-6-4-6-8 0-8.667 8.666-10 8.666-20Z"
-				fill="#111827"></path></svg
-		>
-		<h2>What's New in Astro 6.0?</h2>
-		<p>
-			Redesigned dev server, fonts, live collections, built-in CSP support, and more! Click to
-			explore Astro 6.0's new features.
-		</p>
-	</a>
+  <main
+    class="flex-1 flex flex-col min-w-0 min-h-0 overflow-y-auto custom-scrollbar relative"
+  >
+    <header
+      class="h-16 bg-[#161616] border-b border-[#2d2d2d] flex items-center justify-between px-4 sm:px-6 shrink-0 gap-2"
+    >
+      <div class="flex items-center gap-2 sm:gap-4 min-w-0 flex-wrap">
+        <div
+          id="header-status-pill"
+          class="flex items-center gap-2 px-3 py-1 rounded-full border text-xs font-medium bg-amber-500/10 border-amber-500/20 text-amber-400"
+        >
+          <span
+            id="header-status-dot"
+            class="w-2 h-2 rounded-full bg-amber-400 animate-pulse shrink-0"
+          ></span>
+          <span id="header-status-text" class="truncate">Mengecek backend…</span>
+        </div>
+        <div class="h-4 w-px bg-[#2d2d2d] hidden sm:block"></div>
+        <div class="text-sm text-gray-400 hidden md:block">
+          <span class="text-white font-medium">API:</span>
+          <span
+            id="header-api-url"
+            class="truncate max-w-48 lg:max-w-xs font-mono text-[11px]"
+            >{apiBase}</span
+          >
+        </div>
+      </div>
+      <div class="flex items-center gap-1 sm:gap-3 shrink-0">
+        <button
+          type="button"
+          class="p-2 text-gray-400 hover:text-white transition-colors"
+          aria-label="Notifications"
+        >
+          <iconify-icon icon="lucide:bell" class="text-xl"></iconify-icon>
+        </button>
+        <button
+          type="button"
+          class="p-2 text-gray-400 hover:text-white transition-colors"
+          aria-label="Settings"
+        >
+          <iconify-icon icon="lucide:settings" class="text-xl"></iconify-icon>
+        </button>
+        <div
+          class="w-8 h-8 rounded-full bg-gradient-to-tr from-gray-700 to-gray-500 border border-[#2d2d2d]"
+        >
+        </div>
+      </div>
+    </header>
+
+    <div
+      id="dashboard-split"
+      class="flex flex-col lg:flex-row h-[min(600px,calc(100vh-64px))] lg:h-[calc(100vh-64px)] min-h-[480px] shrink-0"
+    >
+      <!-- Map stage -->
+      <div
+        id="map-stage"
+        class="flex-1 relative bg-[#1a1a1a] overflow-hidden border-b lg:border-b-0 lg:border-r border-[#2d2d2d] shadow-inner min-h-[280px] lg:min-h-0"
+      >
+        <div
+          class="absolute inset-0 opacity-10 pointer-events-none"
+          style="background-image: radial-gradient(#444 1px, transparent 1px); background-size: 32px 32px;"
+        >
+        </div>
+        <div
+          class="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')]"
+        >
+        </div>
+
+        <div
+          id="map-preview"
+          class="absolute inset-0 z-[5] min-h-[200px]"
+          aria-label="Peta preview"
+        >
+        </div>
+        <div
+          id="map-idle-banner"
+          class="pointer-events-none absolute bottom-14 left-1/2 z-[15] max-w-[min(90%,420px)] -translate-x-1/2 rounded-lg border border-[#2d2d2d] bg-[#161616]/95 px-4 py-2 text-center text-[11px] text-gray-400 shadow-lg backdrop-blur-sm"
+        >
+          <span class="font-semibold text-[#0066cc]">Peta preview</span>
+          · OSM + Carto (gelap). Titik
+          <span class="text-gray-500">contoh</span>
+          sebelum scraping. Setelah
+          <strong class="text-gray-300">Start Scraping</strong>, peta fokus ke lokasi (geocode) + hasil.
+        </div>
+
+        <div
+          class="absolute top-6 left-6 z-20 w-72 max-w-[calc(100%-3rem)] space-y-3"
+        >
+          <div
+            class="bg-[#161616]/95 backdrop-blur-md border border-[#2d2d2d] p-4 rounded-xl shadow-2xl"
+          >
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <p
+                  class="text-[10px] text-gray-500 uppercase tracking-widest font-bold"
+                >
+                  Total Scraped
+                </p>
+                <p
+                  id="dash-total-scraped"
+                  class="text-2xl font-bold font-mono text-white"
+                >
+                  —
+                </p>
+              </div>
+              <div class="text-right">
+                <p
+                  class="text-[10px] text-gray-500 uppercase tracking-widest font-bold"
+                >
+                  Avg Rating
+                </p>
+                <div class="flex items-center gap-1 text-[#FFD700]">
+                  <iconify-icon icon="lucide:star" class="text-[#FFD700]"
+                  ></iconify-icon>
+                  <p class="text-xl font-bold font-mono text-white">4.3</p>
+                </div>
+              </div>
+            </div>
+            <div class="space-y-2">
+              <p
+                class="text-[10px] text-gray-500 uppercase tracking-widest font-bold"
+              >
+                Rating Distribution
+              </p>
+              <div class="space-y-1.5">
+                <div class="flex items-center gap-2">
+                  <span class="text-[10px] w-4 text-gray-400">5★</span>
+                  <div
+                    class="flex-1 h-1.5 bg-gray-800 rounded-full overflow-hidden"
+                  >
+                    <div class="h-full bg-[#FFD700] w-[45%]"></div>
+                  </div>
+                  <span class="text-[10px] text-gray-500">45%</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-[10px] w-4 text-gray-400">4★</span>
+                  <div
+                    class="flex-1 h-1.5 bg-gray-800 rounded-full overflow-hidden"
+                  >
+                    <div class="h-full bg-[#0066cc] w-[35%]"></div>
+                  </div>
+                  <span class="text-[10px] text-gray-500">35%</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-[10px] w-4 text-gray-400">3★</span>
+                  <div
+                    class="flex-1 h-1.5 bg-gray-800 rounded-full overflow-hidden"
+                  >
+                    <div class="h-full bg-[#FF8C00] w-[15%]"></div>
+                  </div>
+                  <span class="text-[10px] text-gray-500">15%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div
+            class="bg-[#161616]/95 backdrop-blur-md border border-[#2d2d2d] p-3 rounded-xl flex flex-col gap-2"
+          >
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex items-center gap-2 min-w-0">
+                <div
+                  id="live-progress-dot"
+                  class="w-2 h-2 rounded-full bg-gray-500 shrink-0"
+                >
+                </div>
+                <span
+                  class="text-xs text-gray-400 uppercase tracking-widest font-bold truncate"
+                  >Live tracking</span
+                >
+              </div>
+              <span
+                id="live-progress-label"
+                class="text-[10px] font-mono text-[#0066cc] shrink-0"
+                >0 / 0</span
+              >
+            </div>
+            <div class="w-full h-1.5 bg-gray-800 rounded-full overflow-hidden">
+              <div
+                id="live-progress-fill"
+                class="h-full bg-[#0066cc] rounded-full transition-[width] duration-300 ease-out"
+                style="width: 0%"
+              >
+              </div>
+            </div>
+          </div>
+          <div
+            class="bg-[#161616]/95 backdrop-blur-md border border-[#2d2d2d] p-3 rounded-xl max-h-40 overflow-y-auto custom-scrollbar"
+          >
+            <p
+              class="text-[10px] text-gray-500 uppercase tracking-widest font-bold mb-2"
+            >
+              Log scraping
+            </p>
+            <pre
+              id="scrape-log"
+              class="text-[10px] text-gray-400 font-mono whitespace-pre-wrap break-words m-0 leading-relaxed">Menunggu job…</pre>
+          </div>
+        </div>
+
+        <div
+          class="absolute top-6 right-6 z-20 flex bg-[#161616]/95 border border-[#2d2d2d] rounded-lg p-1 shadow-xl"
+        >
+          <button
+            id="map-view-toggle"
+            type="button"
+            class="flex items-center gap-2 px-3 py-1.5 bg-[#0066cc] text-white rounded-md text-xs font-bold transition-all"
+          >
+            <iconify-icon icon="lucide:map"></iconify-icon> Map
+          </button>
+          <button
+            id="list-view-toggle"
+            type="button"
+            class="flex items-center gap-2 px-3 py-1.5 text-gray-500 hover:text-white rounded-md text-xs font-bold transition-all"
+          >
+            <iconify-icon icon="lucide:list"></iconify-icon> List
+          </button>
+        </div>
+
+        <div
+          class="absolute bottom-6 left-6 z-20 bg-[#161616]/95 backdrop-blur-md border border-[#2d2d2d] p-3 rounded-xl shadow-xl space-y-2 max-sm:hidden"
+        >
+          <p
+            class="text-[9px] text-gray-500 uppercase tracking-widest font-bold mb-1"
+          >
+            Rating Legend
+          </p>
+          <div class="grid grid-cols-1 gap-1.5">
+            <div class="flex items-center gap-2">
+              <div class="w-2.5 h-2.5 rounded-full bg-[#FFD700]"></div>
+              <span class="text-[10px] text-gray-400">5.0 Stars</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <div class="w-2.5 h-2.5 rounded-full bg-[#0066cc]"></div>
+              <span class="text-[10px] text-gray-400">4.0 - 4.9</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <div class="w-2.5 h-2.5 rounded-full bg-[#FF8C00]"></div>
+              <span class="text-[10px] text-gray-400">3.0 - 3.9</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <div class="w-2.5 h-2.5 rounded-full bg-[#FF4444]"></div>
+              <span class="text-[10px] text-gray-400">2.0 - 2.9</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <div class="w-2.5 h-2.5 rounded-full bg-[#666666]"></div>
+              <span class="text-[10px] text-gray-400">Below 2.0</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="absolute bottom-6 right-6 z-20 flex flex-col gap-2">
+          <button
+            id="map-zoom-in"
+            type="button"
+            class="w-10 h-10 bg-[#161616]/95 border border-[#2d2d2d] rounded-lg flex items-center justify-center text-gray-400 hover:text-white hover:bg-[#1f1f1f] transition-all"
+            aria-label="Zoom in"
+          >
+            <iconify-icon icon="lucide:plus" class="text-lg"></iconify-icon>
+          </button>
+          <button
+            id="map-zoom-out"
+            type="button"
+            class="w-10 h-10 bg-[#161616]/95 border border-[#2d2d2d] rounded-lg flex items-center justify-center text-gray-400 hover:text-white hover:bg-[#1f1f1f] transition-all"
+            aria-label="Zoom out"
+          >
+            <iconify-icon icon="lucide:minus" class="text-lg"></iconify-icon>
+          </button>
+          <button
+            id="map-recenter"
+            type="button"
+            class="w-10 h-10 bg-[#161616]/95 border border-[#2d2d2d] rounded-lg flex items-center justify-center text-gray-400 hover:text-white hover:bg-[#1f1f1f] transition-all mt-2"
+            aria-label="Recenter"
+          >
+            <iconify-icon icon="lucide:navigation-2" class="text-lg"
+            ></iconify-icon>
+          </button>
+        </div>
+      </div>
+
+      <!-- Results panel -->
+      <div
+        id="results-panel"
+        class="w-full lg:w-[500px] h-full bg-[#161616] flex flex-col shrink-0 overflow-hidden min-h-[320px]"
+      >
+        <div
+          class="p-4 border-b border-[#2d2d2d] flex items-center justify-between gap-2"
+        >
+          <h3 id="results-heading" class="text-sm font-semibold">
+            Results (0)
+          </h3>
+          <div class="flex items-center gap-2">
+            <button
+              type="button"
+              class="p-1.5 bg-[#1f1f1f] border border-[#2d2d2d] rounded-md text-gray-400 hover:text-white"
+              aria-label="Filter"
+            >
+              <iconify-icon icon="lucide:filter"></iconify-icon>
+            </button>
+            <button
+              type="button"
+              class="p-1.5 bg-[#1f1f1f] border border-[#2d2d2d] rounded-md text-gray-400 hover:text-white"
+              aria-label="Columns"
+            >
+              <iconify-icon icon="lucide:columns"></iconify-icon>
+            </button>
+          </div>
+        </div>
+        <div
+          class="flex-1 overflow-x-auto overflow-y-auto custom-scrollbar min-h-0"
+        >
+          <table
+            class="w-full text-left border-collapse min-w-[420px]"
+            id="results-table"
+          >
+            <thead
+              class="sticky top-0 bg-[#161616] z-10 border-b border-[#2d2d2d]"
+            >
+              <tr
+                class="text-[10px] font-semibold text-gray-500 uppercase tracking-widest"
+              >
+                <th class="px-4 py-3">Name</th>
+                <th class="px-4 py-3">Rating</th>
+                <th class="px-4 py-3">Phone</th>
+                <th class="px-4 py-3 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-[#2d2d2d]" id="results-tbody"></tbody>
+          </table>
+        </div>
+        <div class="p-4 border-t border-[#2d2d2d] bg-[#1a1a1a] shrink-0">
+          <div
+            class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4"
+          >
+            <div class="flex flex-wrap gap-2">
+              <button
+                id="export-csv-btn"
+                type="button"
+                class="px-3 py-1.5 bg-[#1f1f1f] border border-[#2d2d2d] rounded text-xs font-semibold hover:border-[#0066cc] transition-all flex items-center gap-2 text-gray-200"
+              >
+                <iconify-icon icon="lucide:file-text"></iconify-icon> CSV
+              </button>
+              <button
+                id="export-json-btn"
+                type="button"
+                class="px-3 py-1.5 bg-[#1f1f1f] border border-[#2d2d2d] rounded text-xs font-semibold hover:border-[#0066cc] transition-all flex items-center gap-2 text-gray-200"
+              >
+                <iconify-icon icon="lucide:code"></iconify-icon> JSON
+              </button>
+              <button
+                id="export-xlsx-btn"
+                type="button"
+                class="px-3 py-1.5 bg-[#1f1f1f] border border-[#2d2d2d] rounded text-xs font-semibold hover:border-[#0066cc] transition-all flex items-center gap-2 text-gray-200"
+              >
+                <iconify-icon icon="lucide:table"></iconify-icon> EXCEL
+              </button>
+            </div>
+          </div>
+          <div
+            class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs text-gray-500"
+          >
+            <p id="results-pagination-text">Belum ada data</p>
+            <div class="flex gap-1">
+              <button
+                type="button"
+                class="w-8 h-8 flex items-center justify-center rounded border border-[#2d2d2d] hover:bg-[#1f1f1f] text-gray-400"
+                aria-label="Previous page"
+              >
+                <iconify-icon icon="lucide:chevron-left"></iconify-icon>
+              </button>
+              <button
+                type="button"
+                class="w-8 h-8 flex items-center justify-center rounded border border-[#0066cc] bg-[#0066cc]/10 text-white"
+              >
+                1
+              </button>
+              <button
+                type="button"
+                class="w-8 h-8 flex items-center justify-center rounded border border-[#2d2d2d] hover:bg-[#1f1f1f] text-gray-400"
+              >
+                2
+              </button>
+              <button
+                type="button"
+                class="w-8 h-8 flex items-center justify-center rounded border border-[#2d2d2d] hover:bg-[#1f1f1f] text-gray-400"
+              >
+                3
+              </button>
+              <button
+                type="button"
+                class="w-8 h-8 flex items-center justify-center rounded border border-[#2d2d2d] hover:bg-[#1f1f1f] text-gray-400"
+                aria-label="Next page"
+              >
+                <iconify-icon icon="lucide:chevron-right"></iconify-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Analytics strip -->
+    <section
+      class="p-6 bg-[#0f0f0f] border-t border-[#2d2d2d] shrink-0 overflow-x-auto custom-scrollbar"
+    >
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 min-w-0">
+        <div
+          class="bg-[#161616] border border-[#2d2d2d] rounded-2xl p-5 hover:border-[#0066cc]/50 transition-all group shadow-lg"
+        >
+          <div class="flex items-center justify-between mb-4">
+            <h4
+              class="text-[10px] font-bold text-gray-500 uppercase tracking-widest"
+            >
+              Location Summary
+            </h4>
+            <iconify-icon
+              icon="lucide:info"
+              class="text-gray-600 group-hover:text-[#0066cc] transition-colors"
+            ></iconify-icon>
+          </div>
+          <div class="space-y-4">
+            <div>
+              <span
+                id="dash-footer-total"
+                class="block text-3xl font-bold text-white">—</span
+              >
+              <span
+                class="text-[10px] text-gray-500 font-bold uppercase tracking-tighter"
+                >Total Businesses Found</span
+              >
+            </div>
+            <div class="grid grid-cols-2 gap-4 pt-2 border-t border-[#2d2d2d]">
+              <div>
+                <span class="block text-lg font-bold text-white"
+                  >4.6<span class="text-xs text-gray-500">/5</span></span
+                >
+                <span class="text-[9px] text-gray-500 uppercase font-bold"
+                  >Avg Rating</span
+                >
+              </div>
+              <div>
+                <span class="block text-lg font-bold text-[#0066cc] truncate"
+                  >Dining</span
+                >
+                <span class="text-[9px] text-gray-500 uppercase font-bold"
+                  >Top Category</span
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+        <div
+          class="bg-[#161616] border border-[#2d2d2d] rounded-2xl p-5 hover:border-[#0066cc]/50 transition-all group shadow-lg"
+        >
+          <div class="flex items-center justify-between mb-4">
+            <h4
+              class="text-[10px] font-bold text-gray-500 uppercase tracking-widest"
+            >
+              Rating Distribution
+            </h4>
+            <iconify-icon
+              icon="lucide:bar-chart-3"
+              class="text-gray-600 group-hover:text-[#0066cc] transition-colors"
+            ></iconify-icon>
+          </div>
+          <div class="space-y-2">
+            <div class="flex items-center gap-2">
+              <span class="text-[10px] w-4 text-gray-500 font-bold">5★</span>
+              <div
+                class="flex-1 h-1.5 bg-gray-800 rounded-full overflow-hidden"
+              >
+                <div class="h-full bg-[#0066cc] w-[45%]"></div>
+              </div>
+              <span class="text-[10px] text-gray-400 font-mono w-6 text-right"
+                >456</span
+              >
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-[10px] w-4 text-gray-500 font-bold">4★</span>
+              <div
+                class="flex-1 h-1.5 bg-gray-800 rounded-full overflow-hidden"
+              >
+                <div class="h-full bg-[#0066cc]/80 w-[38%]"></div>
+              </div>
+              <span class="text-[10px] text-gray-400 font-mono w-6 text-right"
+                >389</span
+              >
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-[10px] w-4 text-gray-500 font-bold">3★</span>
+              <div
+                class="flex-1 h-1.5 bg-gray-800 rounded-full overflow-hidden"
+              >
+                <div class="h-full bg-[#0066cc]/60 w-[25%]"></div>
+              </div>
+              <span class="text-[10px] text-gray-400 font-mono w-6 text-right"
+                >254</span
+              >
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-[10px] w-4 text-gray-500 font-bold">2★</span>
+              <div
+                class="flex-1 h-1.5 bg-gray-800 rounded-full overflow-hidden"
+              >
+                <div class="h-full bg-[#0066cc]/40 w-[10%]"></div>
+              </div>
+              <span class="text-[10px] text-gray-400 font-mono w-6 text-right"
+                >98</span
+              >
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-[10px] w-4 text-gray-500 font-bold">1★</span>
+              <div
+                class="flex-1 h-1.5 bg-gray-800 rounded-full overflow-hidden"
+              >
+                <div class="h-full bg-[#0066cc]/20 w-[5%]"></div>
+              </div>
+              <span class="text-[10px] text-gray-400 font-mono w-6 text-right"
+                >51</span
+              >
+            </div>
+          </div>
+        </div>
+        <div
+          class="bg-[#161616] border border-[#2d2d2d] rounded-2xl p-5 hover:border-[#0066cc]/50 transition-all group shadow-lg"
+        >
+          <div class="flex items-center justify-between mb-4">
+            <h4
+              class="text-[10px] font-bold text-gray-500 uppercase tracking-widest"
+            >
+              Quick Stats
+            </h4>
+            <iconify-icon
+              icon="lucide:activity"
+              class="text-gray-600 group-hover:text-[#0066cc] transition-colors"
+            ></iconify-icon>
+          </div>
+          <div class="grid grid-cols-2 gap-x-4 gap-y-4">
+            <div>
+              <span class="block text-xl font-bold text-white font-mono"
+                >5,234</span
+              >
+              <span class="text-[9px] text-gray-500 uppercase font-bold"
+                >Reviews</span
+              >
+            </div>
+            <div>
+              <span class="block text-xl font-bold text-white font-mono"
+                >892</span
+              >
+              <span class="text-[9px] text-gray-500 uppercase font-bold"
+                >Verified</span
+              >
+            </div>
+            <div>
+              <span class="block text-xl font-bold text-white font-mono"
+                >78%</span
+              >
+              <span class="text-[9px] text-gray-500 uppercase font-bold"
+                >Response</span
+              >
+            </div>
+            <div class="flex items-end">
+              <div
+                class="flex items-center gap-1 text-[9px] text-green-500 font-bold bg-green-500/10 px-2 py-1 rounded-md"
+              >
+                <iconify-icon icon="lucide:trending-up"></iconify-icon>
+                <span>+12.4%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div
+          class="bg-[#161616] border border-[#2d2d2d] rounded-2xl p-5 hover:border-[#0066cc]/50 transition-all group shadow-lg"
+        >
+          <div class="flex items-center justify-between mb-4">
+            <h4
+              class="text-[10px] font-bold text-gray-500 uppercase tracking-widest"
+            >
+              Top Rated
+            </h4>
+            <iconify-icon
+              icon="lucide:award"
+              class="text-gray-600 group-hover:text-[#0066cc] transition-colors"
+            ></iconify-icon>
+          </div>
+          <div class="space-y-2">
+            <div
+              class="flex items-center justify-between bg-[#1f1f1f] p-2 rounded-xl border border-[#2d2d2d] hover:border-[#0066cc]/30 transition-colors"
+            >
+              <div class="min-w-0">
+                <p class="text-xs font-bold text-white truncate">
+                  Green Leaf Cafe
+                </p>
+                <div class="flex gap-0.5 text-[#FFD700] text-[10px]">
+                  <iconify-icon icon="lucide:star"></iconify-icon>
+                  <iconify-icon icon="lucide:star"></iconify-icon>
+                  <iconify-icon icon="lucide:star"></iconify-icon>
+                  <iconify-icon icon="lucide:star"></iconify-icon>
+                  <iconify-icon icon="lucide:star"></iconify-icon>
+                </div>
+              </div>
+              <span
+                class="text-xs font-bold font-mono bg-[#0066cc]/20 text-[#0066cc] px-1.5 py-0.5 rounded"
+                >4.9</span
+              >
+            </div>
+            <div
+              class="flex items-center justify-between bg-[#1f1f1f] p-2 rounded-xl border border-[#2d2d2d] hover:border-[#0066cc]/30 transition-colors"
+            >
+              <div class="min-w-0">
+                <p class="text-xs font-bold text-white truncate">Metro Plaza</p>
+                <div class="flex gap-0.5 text-[#FFD700] text-[10px]">
+                  <iconify-icon icon="lucide:star"></iconify-icon>
+                  <iconify-icon icon="lucide:star"></iconify-icon>
+                  <iconify-icon icon="lucide:star"></iconify-icon>
+                  <iconify-icon icon="lucide:star"></iconify-icon>
+                  <iconify-icon icon="lucide:star"></iconify-icon>
+                </div>
+              </div>
+              <span
+                class="text-xs font-bold font-mono bg-[#0066cc]/20 text-[#0066cc] px-1.5 py-0.5 rounded"
+                >4.9</span
+              >
+            </div>
+            <div
+              class="flex items-center justify-between bg-[#1f1f1f] p-2 rounded-xl border border-[#2d2d2d] hover:border-[#0066cc]/30 transition-colors"
+            >
+              <div class="min-w-0">
+                <p class="text-xs font-bold text-white truncate">
+                  Downtown Dental
+                </p>
+                <div class="flex gap-0.5 text-[#FFD700] text-[10px]">
+                  <iconify-icon icon="lucide:star"></iconify-icon>
+                  <iconify-icon icon="lucide:star"></iconify-icon>
+                  <iconify-icon icon="lucide:star"></iconify-icon>
+                  <iconify-icon icon="lucide:star"></iconify-icon>
+                  <iconify-icon icon="lucide:star-half"></iconify-icon>
+                </div>
+              </div>
+              <span
+                class="text-xs font-bold font-mono bg-[#0066cc]/20 text-[#0066cc] px-1.5 py-0.5 rounded"
+                >4.8</span
+              >
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
 </div>
 
-<style>
-	#background {
-		position: fixed;
-		top: 0;
-		left: 0;
-		width: 100%;
-		height: 100%;
-		z-index: -1;
-		filter: blur(100px);
-	}
+<!-- Skrip ringan dulu: cek /api/health tanpa impor Leaflet (tidak tertahan chunk peta). -->
+<script define:vars={{ apiBase }}>
+  {
+    const pill = document.getElementById("header-status-pill");
+    const text = document.getElementById("header-status-text");
+    const dot = document.getElementById("header-status-dot");
+    if (pill && text) {
+      const setDot = (cls) => {
+        if (dot) dot.className = cls;
+      };
+      const timeoutMs = 8000;
+      const ctrl = new AbortController();
+      const timer = window.setTimeout(() => ctrl.abort(), timeoutMs);
+      fetch(`${apiBase}/api/health`, { signal: ctrl.signal })
+        .then((r) => {
+          window.clearTimeout(timer);
+          if (!r.ok) return Promise.reject();
+          return r.json();
+        })
+        .then((j) => {
+          if (j?.ok) {
+            text.textContent = "Backend siap";
+            pill.className =
+              "flex items-center gap-2 px-3 py-1 rounded-full border text-xs font-medium bg-green-500/10 border-green-500/20 text-green-500";
+            setDot("w-2 h-2 rounded-full bg-green-500 animate-pulse shrink-0");
+          } else {
+            throw new Error("bad");
+          }
+        })
+        .catch(() => {
+          window.clearTimeout(timer);
+          text.textContent = "Backend offline";
+          pill.className =
+            "flex items-center gap-2 px-3 py-1 rounded-full border text-xs font-medium bg-red-500/10 border-red-500/20 text-red-400";
+          setDot("w-2 h-2 rounded-full bg-red-400 shrink-0");
+        });
+    }
+  }
+</script>
 
-	#container {
-		font-family: Inter, Roboto, 'Helvetica Neue', 'Arial Nova', 'Nimbus Sans', Arial, sans-serif;
-		height: 100%;
-	}
+<script define:vars={{ apiBase }}>
+  /** Dynamic import: kalau Leaflet/chunk peta gagal, skrip ini tetap jalan (tombol Start, fetch API). */
+  let mapModPromise = null;
+  function getMapMod() {
+    if (!mapModPromise) mapModPromise = import("../lib/dashboardMap");
+    return mapModPromise;
+  }
 
-	main {
-		height: 100%;
-		display: flex;
-		justify-content: center;
-	}
+  async function safeIdleMap() {
+    try {
+      (await getMapMod()).showIdlePreviewMap();
+    } catch (e) {
+      console.warn("Peta idle:", e);
+    }
+  }
 
-	#hero {
-		display: flex;
-		align-items: start;
-		flex-direction: column;
-		justify-content: center;
-		padding: 16px;
-	}
+  function formatCount(n) {
+    if (n == null || !Number.isFinite(n)) return "—";
+    return n.toLocaleString("id-ID");
+  }
 
-	h1 {
-		font-size: 22px;
-		margin-top: 0.25em;
-	}
+  function setResultsTable(stores) {
+    const tbody = document.getElementById("results-tbody");
+    const heading = document.getElementById("results-heading");
+    const pag = document.getElementById("results-pagination-text");
+    const totalMap = document.getElementById("dash-total-scraped");
+    const totalFooter = document.getElementById("dash-footer-total");
+    if (!tbody) return;
+    const n = Array.isArray(stores) ? stores.length : 0;
+    if (heading) heading.textContent = `Results (${n})`;
+    if (pag) {
+      pag.textContent = n
+        ? `Menampilkan 1–${n} dari ${n}`
+        : "Belum ada data — jalankan scraping dari sidebar";
+    }
+    const formatted = formatCount(n);
+    if (totalMap) totalMap.textContent = formatted;
+    if (totalFooter) totalFooter.textContent = formatted;
+    if (!n) {
+      tbody.innerHTML =
+        '<tr><td colspan="4" class="px-4 py-10 text-center text-sm text-gray-500 leading-relaxed">Belum ada hasil. Isi <strong class="text-gray-400">keyword</strong>, <strong class="text-gray-400">lokasi</strong>, dan <strong class="text-gray-400">target</strong>, lalu klik <span class="text-[#0066cc] font-medium">Start Scraping</span>.<br/><span class="text-xs mt-2 block text-gray-600">Backend: <code class="text-gray-500">cd be && go run . server</code></span></td></tr>';
+      return;
+    }
+    tbody.innerHTML = "";
+    stores.forEach((s, i) => {
+      const name = (s.name || "").trim() || "—";
+      const addr = (s.address || "").trim() || "—";
+      const phone = (s.phone || "").trim() || "—";
+      const sub = addr.length > 48 ? addr.slice(0, 48) + "…" : addr;
+      const tr = document.createElement("tr");
+      tr.className =
+        "hover:bg-[#1f1f1f] group transition-colors cursor-pointer result-row" +
+        (i === 0 ? " bg-[#0066cc]/5 border-l-2 border-[#0066cc]" : "");
+      tr.dataset.name = name;
+      tr.dataset.sub = sub;
+      tr.dataset.address = addr;
+      tr.dataset.phone = phone;
+      tr.innerHTML = `
+				<td class="px-4 py-3 text-sm">
+					<span class="font-medium block">${escapeHtml(name)}</span>
+					<span class="text-xs text-gray-500">${escapeHtml(sub)}</span>
+				</td>
+				<td class="px-4 py-3">
+					<span class="text-sm font-mono text-gray-600">—</span>
+				</td>
+				<td class="px-4 py-3 text-xs text-gray-400 font-mono">${escapeHtml(phone)}</td>
+				<td class="px-4 py-3 text-right">
+					<button type="button" class="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-[#0066cc] transition-all" aria-label="Detail">
+						<iconify-icon icon="lucide:external-link"></iconify-icon>
+					</button>
+				</td>`;
+      tbody.appendChild(tr);
+    });
+  }
 
-	#links {
-		display: flex;
-		gap: 16px;
-	}
+  function escapeHtml(s) {
+    return String(s)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
 
-	#links a {
-		display: flex;
-		align-items: center;
-		padding: 10px 12px;
-		color: #111827;
-		text-decoration: none;
-		transition: color 0.2s;
-	}
+  function setLog(text) {
+    const el = document.getElementById("scrape-log");
+    if (el) {
+      el.textContent = text;
+      el.scrollTop = el.scrollHeight;
+    }
+  }
 
-	#links a:hover {
-		color: rgb(78, 80, 86);
-	}
+  /** phase: idle | running | done — mengikuti data progress dari GET /api/scrape/status */
+  function updateLiveProgress(saved, target, phase) {
+    const fill = document.getElementById("live-progress-fill");
+    const label = document.getElementById("live-progress-label");
+    const dot = document.getElementById("live-progress-dot");
+    if (!fill || !label) return;
+    const t = Math.max(0, Number(target) || 0);
+    const s = Math.max(0, Number(saved) || 0);
+    let pct = 0;
+    if (t > 0) pct = Math.min(100, (s / t) * 100);
+    fill.style.width = `${pct}%`;
+    label.textContent = t > 0 ? `${s} / ${t}` : "—";
+    if (dot) {
+      dot.className = "w-2 h-2 rounded-full shrink-0 ";
+      if (phase === "running") dot.className += "bg-green-500 animate-pulse";
+      else if (phase === "done") dot.className += "bg-green-500";
+      else dot.className += "bg-gray-500";
+    }
+  }
 
-	#links a svg {
-		height: 1em;
-		margin-left: 8px;
-	}
+  function setScrapeBusy(busy) {
+    const btn = document.getElementById("start-scrape-btn");
+    if (!btn) return;
+    btn.disabled = busy;
+    btn.classList.toggle("opacity-60", busy);
+    btn.classList.toggle("cursor-not-allowed", busy);
+  }
 
-	#links a.button {
-		color: white;
-		background: linear-gradient(83.21deg, #3245ff 0%, #bc52ee 100%);
-		box-shadow:
-			inset 0 0 0 1px rgba(255, 255, 255, 0.12),
-			inset 0 -2px 0 rgba(0, 0, 0, 0.24);
-		border-radius: 10px;
-	}
+  function setViewMode(mode) {
+    const mapStage = document.getElementById("map-stage");
+    const results = document.getElementById("results-panel");
+    const split = document.getElementById("dashboard-split");
+    const btnMap = document.getElementById("map-view-toggle");
+    const btnList = document.getElementById("list-view-toggle");
+    if (!mapStage || !results || !split || !btnMap || !btnList) return;
 
-	#links a.button:hover {
-		color: rgb(230, 230, 230);
-		box-shadow: none;
-	}
+    const active = "bg-[#0066cc] text-white";
+    const inactive = "text-gray-500 hover:text-white bg-transparent";
 
-	pre {
-		font-family:
-			ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, 'DejaVu Sans Mono',
-			monospace;
-		font-weight: normal;
-		background: linear-gradient(14deg, #d83333 0%, #f041ff 100%);
-		-webkit-background-clip: text;
-		-webkit-text-fill-color: transparent;
-		background-clip: text;
-		margin: 0;
-	}
+    if (mode === "list") {
+      mapStage.classList.add("hidden");
+      results.classList.remove("lg:w-[500px]");
+      results.classList.add("lg:flex-1");
+      split.classList.remove("lg:flex-row");
+      split.classList.add("lg:flex-col");
+      btnList.className =
+        "flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-bold transition-all " +
+        active;
+      btnMap.className =
+        "flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-bold transition-all " +
+        inactive;
+    } else {
+      mapStage.classList.remove("hidden");
+      results.classList.add("lg:w-[500px]");
+      results.classList.remove("lg:flex-1");
+      split.classList.add("lg:flex-row");
+      split.classList.remove("lg:flex-col");
+      btnMap.className =
+        "flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-bold transition-all " +
+        active;
+      btnList.className =
+        "flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-bold transition-all " +
+        inactive;
+      void getMapMod()
+        .then((m) => m.invalidateMapSize())
+        .catch(() => {});
+    }
+  }
 
-	h2 {
-		margin: 0 0 1em;
-		font-weight: normal;
-		color: #111827;
-		font-size: 20px;
-	}
+  function collectRows() {
+    return Array.from(document.querySelectorAll("tr.result-row")).map(
+      (row) => ({
+        name: row.getAttribute("data-name") || "",
+        address:
+          row.getAttribute("data-address") ||
+          row.getAttribute("data-sub") ||
+          "",
+        phone: row.getAttribute("data-phone") || "",
+      }),
+    );
+  }
 
-	p {
-		color: #4b5563;
-		font-size: 16px;
-		line-height: 24px;
-		letter-spacing: -0.006em;
-		margin: 0;
-	}
+  function downloadText(filename, text, mime) {
+    const blob = new Blob([text], { type: mime });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
 
-	code {
-		display: inline-block;
-		background:
-			linear-gradient(66.77deg, #f3cddd 0%, #f5cee7 100%) padding-box,
-			linear-gradient(155deg, #d83333 0%, #f041ff 18%, #f5cee7 45%) border-box;
-		border-radius: 8px;
-		border: 1px solid transparent;
-		padding: 6px 8px;
-	}
+  function wireExports() {
+    document.getElementById("export-csv-btn")?.addEventListener("click", () => {
+      const rows = collectRows();
+      if (!rows.length) {
+        window.alert("Belum ada baris untuk diekspor.");
+        return;
+      }
+      const esc = (s) => '"' + String(s).replace(/"/g, '""') + '"';
+      const lines = [
+        ["name", "address", "phone"].join(","),
+        ...rows.map((r) =>
+          [esc(r.name), esc(r.address), esc(r.phone)].join(","),
+        ),
+      ];
+      downloadText(
+        "maps-scraper-export.csv",
+        lines.join("\n"),
+        "text/csv;charset=utf-8",
+      );
+    });
+    document
+      .getElementById("export-json-btn")
+      ?.addEventListener("click", () => {
+        const rows = collectRows();
+        if (!rows.length) {
+          window.alert("Belum ada baris untuk diekspor.");
+          return;
+        }
+        downloadText(
+          "maps-scraper-export.json",
+          JSON.stringify(rows, null, 2),
+          "application/json;charset=utf-8",
+        );
+      });
+    document
+      .getElementById("export-xlsx-btn")
+      ?.addEventListener("click", () => {
+        window.alert(
+          "Export Excel membutuhkan library tambahan (mis. SheetJS). Gunakan CSV atau JSON untuk saat ini.",
+        );
+      });
+  }
 
-	.box {
-		padding: 16px;
-		background: rgba(255, 255, 255, 1);
-		border-radius: 16px;
-		border: 1px solid white;
-	}
+  function wireRadius() {
+    const r = document.getElementById("input-radius");
+    const label = document.getElementById("radius-label");
+    r?.addEventListener("input", () => {
+      if (label) label.textContent = r.value;
+    });
+  }
 
-	#news {
-		position: absolute;
-		bottom: 16px;
-		right: 16px;
-		max-width: 300px;
-		text-decoration: none;
-		transition: background 0.2s;
-		backdrop-filter: blur(50px);
-	}
+  document
+    .getElementById("map-view-toggle")
+    ?.addEventListener("click", () => setViewMode("map"));
+  document
+    .getElementById("list-view-toggle")
+    ?.addEventListener("click", () => setViewMode("list"));
 
-	#news:hover {
-		background: rgba(255, 255, 255, 0.55);
-	}
+  async function startScrapeFromUI() {
+    const kw = document.getElementById("input-keyword")?.value?.trim() || "";
+    const loc = document.getElementById("input-location")?.value?.trim() || "";
+    const maxRaw = document.getElementById("input-max-results")?.value;
+    let maxResults = parseInt(String(maxRaw), 10);
+    if (!Number.isFinite(maxResults) || maxResults < 1) maxResults = 10;
+    if (maxResults > 500) maxResults = 500;
 
-	@media screen and (max-height: 368px) {
-		#news {
-			display: none;
-		}
-	}
+    if (!kw || !loc) {
+      window.alert("Isi keyword bisnis dan lokasi terlebih dahulu.");
+      return;
+    }
 
-	@media screen and (max-width: 768px) {
-		#container {
-			display: flex;
-			flex-direction: column;
-		}
+    setLog("Mengirim permintaan ke backend…");
+    updateLiveProgress(0, maxResults, "running");
+    setScrapeBusy(true);
 
-		#hero {
-			display: block;
-			padding-top: 10%;
-		}
+    let res;
+    try {
+      res = await fetch(`${apiBase}/api/scrape`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ keyword: kw, location: loc, maxResults }),
+      });
+    } catch {
+      setScrapeBusy(false);
+      updateLiveProgress(0, 0, "idle");
+      void safeIdleMap();
+      setLog(
+        "Gagal menghubungi backend. Pastikan server jalan: go run . server",
+      );
+      window.alert(
+        "Tidak bisa terhubung ke API. Cek URL di .env (PUBLIC_API_URL) dan backend.",
+      );
+      return;
+    }
 
-		#links {
-			flex-wrap: wrap;
-		}
+    let data = {};
+    try {
+      data = await res.json();
+    } catch {
+      data = {};
+    }
 
-		#links a.button {
-			padding: 14px 18px;
-		}
+    if (res.status === 409) {
+      setScrapeBusy(false);
+      updateLiveProgress(0, 0, "idle");
+      void safeIdleMap();
+      setLog(data.error || "Scraping lain masih berjalan.");
+      window.alert(data.error || "Scraping masih berjalan di server.");
+      return;
+    }
+    if (!res.ok) {
+      setScrapeBusy(false);
+      updateLiveProgress(0, 0, "idle");
+      void safeIdleMap();
+      setLog(data.error || `Error ${res.status}`);
+      window.alert(data.error || `Permintaan ditolak (${res.status})`);
+      return;
+    }
 
-		#news {
-			right: 16px;
-			left: 16px;
-			bottom: 2.5rem;
-			max-width: 100%;
-		}
+    const jobId = data.jobId;
+    if (!jobId) {
+      setScrapeBusy(false);
+      updateLiveProgress(0, 0, "idle");
+      void safeIdleMap();
+      setLog("Respons tidak berisi jobId.");
+      return;
+    }
 
-		h1 {
-			line-height: 1.5;
-		}
-	}
-</style>
+    setViewMode("map");
+    try {
+      const m = await getMapMod();
+      m.focusSearchOnMap(data.mapCenter ?? null);
+      m.invalidateMapSize();
+    } catch (e) {
+      console.warn("Peta fokus:", e);
+    }
+
+    setLog(
+      `Job dimulai (${jobId}). Browser headless di server — peta sudah diarahkan ke lokasi; pantau Live tracking + log.`,
+    );
+
+    let pollTimer;
+    const tick = async () => {
+      let st;
+      try {
+        st = await fetch(
+          `${apiBase}/api/scrape/status?jobId=${encodeURIComponent(jobId)}`,
+        );
+      } catch {
+        clearInterval(pollTimer);
+        setScrapeBusy(false);
+        updateLiveProgress(0, 0, "idle");
+        void safeIdleMap();
+        setLog(
+          "Koneksi ke /api/scrape/status putus. Cek backend dan jaringan.",
+        );
+        return;
+      }
+      const j = await st.json().catch(() => ({}));
+      if (!st.ok) {
+        clearInterval(pollTimer);
+        setScrapeBusy(false);
+        updateLiveProgress(0, 0, "idle");
+        void safeIdleMap();
+        setLog((j && j.error) || "Status job gagal diambil.");
+        return;
+      }
+      if (Array.isArray(j.logs)) setLog(j.logs.join("\n"));
+
+      const pr = j.progress;
+      if (pr && typeof pr === "object" && j.status === "running") {
+        updateLiveProgress(pr.saved, pr.target, "running");
+      }
+
+      if (j.status === "running") return;
+
+      clearInterval(pollTimer);
+      setScrapeBusy(false);
+
+      if (j.status === "error") {
+        updateLiveProgress(0, 0, "idle");
+        void safeIdleMap();
+        window.alert(j.error || "Scraping gagal");
+        return;
+      }
+      if (j.status === "done" && Array.isArray(j.stores)) {
+        const tgt = pr && pr.target > 0 ? pr.target : j.stores.length;
+        updateLiveProgress(j.stores.length, tgt, "done");
+        setResultsTable(j.stores);
+        try {
+          const m = await getMapMod();
+          m.plotStoresOnMap(j.stores, j.mapCenter ?? null);
+          m.invalidateMapSize();
+        } catch (e) {
+          console.warn("Peta hasil:", e);
+        }
+        setLog((j.logs || []).join("\n") + "\n\nSelesai.");
+        return;
+      }
+      updateLiveProgress(0, 0, "idle");
+      void safeIdleMap();
+      setResultsTable([]);
+    };
+
+    pollTimer = setInterval(() => void tick(), 1200);
+    await tick();
+  }
+
+  document.getElementById("start-scrape-btn")?.addEventListener("click", () => {
+    void startScrapeFromUI();
+  });
+
+  setResultsTable([]);
+  updateLiveProgress(0, 0, "idle");
+  wireExports();
+  wireRadius();
+  void (async () => {
+    try {
+      const m = await getMapMod();
+      m.ensureMap();
+      m.showIdlePreviewMap();
+    } catch (e) {
+      console.error("Peta preview gagal dimuat:", e);
+    }
+  })();
+</script>

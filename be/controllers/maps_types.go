@@ -15,6 +15,8 @@ type GoogleMapsScraper struct {
 	mu             sync.Mutex
 	// ProgressLog dipasang dari RunScrapeJob (GUI/CLI) agar pesan proses tampil di log aktivitas.
 	ProgressLog func(string)
+	// OnProgress dipanggil saat jumlah listing tersimpan berubah (untuk API / dashboard).
+	OnProgress func(savedCount, targetMax int)
 }
 
 // ScrapeSummary statistik satu sesi ScrapeCoffeeShops.

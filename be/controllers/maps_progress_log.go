@@ -18,6 +18,12 @@ func (g *GoogleMapsScraper) progressLine(s string) {
 	log.Println(s)
 }
 
+func (g *GoogleMapsScraper) reportProgress(savedCount, targetMax int) {
+	if g != nil && g.OnProgress != nil && targetMax > 0 {
+		g.OnProgress(savedCount, targetMax)
+	}
+}
+
 func (g *GoogleMapsScraper) progressf(format string, args ...interface{}) {
 	s := fmt.Sprintf(format, args...)
 	s = strings.TrimSpace(strings.TrimSuffix(strings.TrimSuffix(s, "\n"), "\r"))

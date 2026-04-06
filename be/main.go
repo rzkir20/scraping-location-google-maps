@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"location/gui"
+	"location/types"
 )
 
 const (
@@ -25,8 +26,23 @@ const (
 )
 
 func main() {
+	// Mode API untuk FE: go run . server   atau   SCRAPER_HTTP_ADDR=127.0.0.1:8080 go run .
+	if addr := strings.TrimSpace(os.Getenv("SCRAPER_HTTP_ADDR")); addr != "" && len(os.Args) == 1 {
+		runHTTPServer(addr)
+		return
+	}
+	if len(os.Args) >= 2 && os.Args[1] == "server" {
+		addr := defaultHTTPAddr
+		if len(os.Args) >= 3 && strings.TrimSpace(os.Args[2]) != "" {
+			addr = strings.TrimSpace(os.Args[2])
+		}
+		runHTTPServer(addr)
+		return
+	}
 	if len(os.Args) == 1 {
-		gui.RunGUI(RunScrapeJob, defaultMaxResults)
+		gui.RunGUI(func(kw, loc string, max int, logf func(string), logStores bool) ([]types.StoreInfo, error) {
+			return RunScrapeJob(kw, loc, max, logf, logStores, ScrapeJobOptions{})
+		}, defaultMaxResults)
 		return
 	}
 	runCLI()
@@ -35,7 +51,7 @@ func main() {
 func runCLI() {
 	keyword, locationName, maxResults := getKeywordLocationAndTarget()
 	logf := func(s string) { log.Println(s) }
-	if _, err := RunScrapeJob(keyword, locationName, maxResults, logf, true); err != nil {
+	if _, err := RunScrapeJob(keyword, locationName, maxResults, logf, true, ScrapeJobOptions{}); err != nil {
 		log.Fatalf("❌ %v\n", err)
 	}
 }

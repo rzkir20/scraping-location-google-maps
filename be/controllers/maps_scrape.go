@@ -47,6 +47,7 @@ func (g *GoogleMapsScraper) dismissBlockingUI(ctx context.Context) {
 
 func (g *GoogleMapsScraper) ScrapeCoffeeShops(url string, maxResults int) ([]types.StoreInfo, ScrapeSummary, error) {
 	summary := ScrapeSummary{TargetMax: maxResults}
+	g.reportProgress(0, maxResults)
 	g.progressf("📍 Navigating to: %s", url)
 	g.progressf("📋 Filter: tanpa website, wajib ada nomor telepon (kuota maks. %d listing)", maxResults)
 
@@ -156,6 +157,7 @@ func (g *GoogleMapsScraper) ScrapeCoffeeShops(url string, maxResults int) ([]typ
 					continue
 				}
 				stores = append(stores, *store)
+				g.reportProgress(len(stores), maxResults)
 				g.progressf("✅ [%d] %s - %s", len(stores), store.Name, getPhoneDisplay(store.Phone))
 				continue
 			}
