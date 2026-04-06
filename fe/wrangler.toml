@@ -1,6 +1,8 @@
 name = "scraping-location-google-maps"
+compatibility_date = "2026-04-06"
 
-[env.production]
-name = "scraping-location-google-maps"
 [vars]
 PUBLIC_API_URL = "http://127.0.0.1:8080"
+
+[assets]
+directory = "./dist"
