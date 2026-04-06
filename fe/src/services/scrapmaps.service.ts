@@ -35,7 +35,8 @@ interface ScrapeStatusJson {
   progress?: { saved?: number; target?: number };
 }
 
-const API_BASE = import.meta.env.PUBLIC_API_URL;
+const API_BASE =
+  "https://scraping-location-google-maps-production.up.railway.app";
 
 export const scrapMapsApiBase = API_BASE;
 
