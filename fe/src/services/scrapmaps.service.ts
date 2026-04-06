@@ -40,9 +40,20 @@ interface ScrapeStatusJson {
  * Jangan pakai `define:vars` + `import` di `<script>` Astro — outputnya jadi IIFE
  * berisi `import` di dalam function (sintaks tidak valid; skrip tidak jalan).
  */
-export const scrapMapsApiBase =
-  (import.meta.env.PUBLIC_API_URL as string | undefined)?.trim() ||
-  "http://127.0.0.1:8080";
+function resolveApiBase(): string {
+  const envBase = (import.meta.env.PUBLIC_API_URL as string | undefined)?.trim();
+  if (envBase) return envBase;
+
+  // Production-safe fallback: call same-origin API when env is not provided.
+  if (typeof window !== "undefined" && window.location?.origin) {
+    return window.location.origin;
+  }
+
+  // Local dev fallback.
+  return "http://127.0.0.1:8080";
+}
+
+export const scrapMapsApiBase = resolveApiBase();
 
 /** Cek /api/health tanpa impor Leaflet (chunk peta tetap terpisah dari pemanggil yang ringan). */
 export function runBackendHealthCheck(
