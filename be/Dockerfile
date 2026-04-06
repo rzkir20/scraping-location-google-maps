@@ -11,6 +11,8 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o /out/maps-scraper .
 FROM debian:bookworm-slim
 
 ENV PORT=8080
+ENV CHROME_BIN=/usr/bin/chromium
+ENV CHROME_PATH=/usr/bin/chromium
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -11,12 +12,32 @@ import (
 	"github.com/chromedp/chromedp"
 )
 
+func resolveEnvChromePath(envName string) (string, error) {
+	p := strings.TrimSpace(os.Getenv(envName))
+	if p == "" {
+		return "", nil
+	}
+	if abs, err := exec.LookPath(p); err == nil {
+		return abs, nil
+	}
+	if _, err := os.Stat(p); err == nil {
+		return p, nil
+	}
+	return "", fmt.Errorf("%s tidak valid atau tidak ditemukan: %s", envName, p)
+}
+
 func resolveChromeExecPath() (string, error) {
-	if p := strings.TrimSpace(os.Getenv("CHROME_PATH")); p != "" {
-		if _, err := os.Stat(p); err == nil {
+	if p, err := resolveEnvChromePath("CHROME_PATH"); err != nil {
+		return "", err
+	} else if p != "" {
+		return p, nil
+	}
+	for _, envName := range []string{"CHROME_BIN", "GOOGLE_CHROME_BIN", "PUPPETEER_EXECUTABLE_PATH"} {
+		if p, err := resolveEnvChromePath(envName); err != nil {
+			return "", err
+		} else if p != "" {
 			return p, nil
 		}
-		return "", fmt.Errorf("CHROME_PATH tidak valid atau tidak ditemukan: %s", p)
 	}
 	switch runtime.GOOS {
 	case "windows":
@@ -43,12 +64,23 @@ func resolveChromeExecPath() (string, error) {
 		}
 		return "", fmt.Errorf("Google Chrome tidak ditemukan di %s", p)
 	default:
-		for _, p := range []string{"/usr/bin/google-chrome", "/usr/bin/google-chrome-stable", "/opt/google/chrome/chrome"} {
+		for _, bin := range []string{"google-chrome", "google-chrome-stable", "chromium", "chromium-browser", "chrome"} {
+			if p, err := exec.LookPath(bin); err == nil {
+				return p, nil
+			}
+		}
+		for _, p := range []string{
+			"/usr/bin/google-chrome",
+			"/usr/bin/google-chrome-stable",
+			"/usr/bin/chromium",
+			"/usr/bin/chromium-browser",
+			"/opt/google/chrome/chrome",
+		} {
 			if _, err := os.Stat(p); err == nil {
 				return p, nil
 			}
 		}
-		return "", fmt.Errorf("google-chrome tidak ditemukan; set CHROME_PATH")
+		return "", fmt.Errorf("browser Chromium/Chrome tidak ditemukan; set CHROME_PATH atau CHROME_BIN (contoh Railway: /usr/bin/chromium)")
 	}
 }
 
