@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -105,6 +106,7 @@ func (g *GoogleMapsScraper) ScrapeCoffeeShops(url string, maxResults int) ([]typ
 	scrollAttempts := 0
 	maxScrollAttempts := 15
 	nextCardIndex := 0
+	consecutiveDeadlineErrors := 0
 
 	g.progressLine("🔍 Scrolling dan mengumpulkan data...")
 
@@ -133,15 +135,25 @@ func (g *GoogleMapsScraper) ScrapeCoffeeShops(url string, maxResults int) ([]typ
 		}
 
 		for i := nextCardIndex; i < cardCountInt && len(stores) < maxResults; i++ {
-			cardCtx, cancel := context.WithTimeout(scrapeCtx, 45*time.Second)
+			cardCtx, cancel := context.WithTimeout(scrapeCtx, 22*time.Second)
 			store, err := g.processCard(i, cardCtx)
 			cancel()
 			if err != nil {
 				summary.CardErrors++
 				g.progressf("❌ Kartu %d: %v", i, err)
+				if isDeadlineExceededErr(err) {
+					consecutiveDeadlineErrors++
+					if consecutiveDeadlineErrors >= 2 {
+						g.progressLine("⚠️  Timeout beruntun pada kartu; lanjut ke siklus scroll berikutnya.")
+						break
+					}
+				} else {
+					consecutiveDeadlineErrors = 0
+				}
 				continue
 			}
 			if store != nil {
+				consecutiveDeadlineErrors = 0
 				if store.HasWebsite {
 					summary.WithWebsite++
 				}
@@ -153,6 +165,7 @@ func (g *GoogleMapsScraper) ScrapeCoffeeShops(url string, maxResults int) ([]typ
 				g.progressf("✅ [%d] %s - %s", len(stores), store.Name, getPhoneDisplay(store.Phone))
 				continue
 			}
+			consecutiveDeadlineErrors = 0
 			summary.SkippedOther++
 		}
 		nextCardIndex = cardCountInt
@@ -164,6 +177,16 @@ func (g *GoogleMapsScraper) ScrapeCoffeeShops(url string, maxResults int) ([]typ
 	summary.SavedNoWebsite = len(stores)
 	g.logScrapeSummary(summary)
 	return stores, summary, nil
+}
+
+func isDeadlineExceededErr(err error) bool {
+	if err == nil {
+		return false
+	}
+	if errors.Is(err, context.DeadlineExceeded) {
+		return true
+	}
+	return strings.Contains(strings.ToLower(err.Error()), "context deadline exceeded")
 }
 
 func (g *GoogleMapsScraper) logScrapeSummary(s ScrapeSummary) {
