@@ -1,6 +1,0 @@
-name = "scraping-location-google-maps"
-compatibility_date = "2025-07-15"
-compatibility_flags = ["nodejs_compat"]
-
-[vars]
-PUBLIC_API_URL = "http://127.0.0.1:8080"
