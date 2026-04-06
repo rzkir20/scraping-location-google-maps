@@ -1,0 +1,6 @@
+name = "scraping-location-google-maps"
+
+[env.production]
+name = "scraping-location-google-maps"
+[vars]
+PUBLIC_API_URL = "http://127.0.0.1:8080"

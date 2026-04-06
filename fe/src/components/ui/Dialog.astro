@@ -1,0 +1,65 @@
+---
+/**
+ * Modal overlay + panel. Buka/tutup dengan `openModal(id)` / `closeModal(id)` dari `../lib/dashboardDialog`.
+ * Tombol backdrop & close otomatis memakai `data-modal-*` agar bisa di-wire sekali untuk banyak instance.
+ */
+interface Props {
+  id: string;
+  zIndex?: number;
+  /** Kelas Tailwind untuk panel dalam (mis. max-w, max-h, overflow, padding). */
+  panelClass?: string;
+  showClose?: boolean;
+  /** Kelas untuk tombol X (posisi). */
+  closeButtonClass?: string;
+  /** Ukuran ikon lucide:x */
+  closeIconClass?: string;
+}
+
+const {
+  id,
+  /** Di atas Leaflet pane (~700) dan overlay dashboard. */
+  zIndex = 10000,
+  panelClass = "max-w-lg max-h-[90vh] overflow-y-auto custom-scrollbar p-6 sm:p-8",
+  showClose = true,
+  closeButtonClass = "absolute top-4 right-4 sm:top-6 sm:right-6 text-gray-500 hover:text-white transition-colors",
+  closeIconClass = "text-2xl",
+} = Astro.props;
+---
+
+<div
+  id={id}
+  hidden
+  class:list={[
+    "dialog-root fixed inset-0 p-4 z-[1000]",
+    /* Buka/tutup lewat `openModal`/`closeModal`: atribut `hidden` + kelas flex (bukan kelas tailwind `hidden` saja). */
+  ]}
+  style={`z-index: ${zIndex}`}
+  aria-hidden="true"
+>
+  <button
+    type="button"
+    class="absolute inset-0 bg-black/80 backdrop-blur-md cursor-default border-0 p-0"
+    tabindex="-1"
+    aria-label="Tutup"
+    data-modal-backdrop={id}></button>
+  <div
+    class:list={[
+      "relative bg-[#161616] border border-[#2d2d2d] rounded-2xl w-full shadow-2xl z-10 text-left",
+      panelClass,
+    ]}
+  >
+    {
+      showClose && (
+        <button
+          type="button"
+          class:list={[closeButtonClass]}
+          aria-label="Tutup"
+          data-modal-close={id}
+        >
+          <iconify-icon icon="lucide:x" class={closeIconClass} />
+        </button>
+      )
+    }
+    <slot />
+  </div>
+</div>

@@ -1,4 +1,9 @@
 ---
+import Dialog from "./ui/Dialog.astro";
+import Input from "./ui/Input.astro";
+import Button from "./ui/Button.astro";
+import Label from "./ui/Label.astro";
+
 const apiBase = import.meta.env.PUBLIC_API_URL ?? "http://127.0.0.1:8080";
 ---
 
@@ -18,51 +23,33 @@ const apiBase = import.meta.env.PUBLIC_API_URL ?? "http://127.0.0.1:8080";
     </div>
     <div class="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-8">
       <section>
-        <label
-          class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3"
-          >Basic Search</label
-        >
+        <Label variant="section">Basic Search</Label>
         <div class="space-y-4">
-          <div class="relative">
-            <iconify-icon
-              icon="lucide:search"
-              class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none"
-            ></iconify-icon>
-            <input
-              id="input-keyword"
-              type="text"
-              placeholder="Search business/keywords..."
-              class="w-full bg-[#1f1f1f] border border-[#2d2d2d] rounded-lg py-2 pl-10 pr-4 text-sm focus:outline-none focus:border-[#0066cc] transition-colors text-gray-200 placeholder:text-gray-600"
-            />
-          </div>
-          <div class="relative">
-            <iconify-icon
-              icon="lucide:navigation"
-              class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none"
-            ></iconify-icon>
-            <input
-              id="input-location"
-              type="text"
-              placeholder="Location (e.g. Bandung, Jakarta)"
-              class="w-full bg-[#1f1f1f] border border-[#2d2d2d] rounded-lg py-2 pl-10 pr-4 text-sm focus:outline-none focus:border-[#0066cc] transition-colors text-gray-200 placeholder:text-gray-600"
-            />
-          </div>
-          <div class="relative">
-            <iconify-icon
-              icon="lucide:hash"
-              class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none"
-            ></iconify-icon>
-            <input
-              id="input-max-results"
-              type="number"
-              min="1"
-              max="500"
-              value="10"
-              placeholder="10"
-              title="Target listing (tanpa website, wajib ada nomor telepon)"
-              class="w-full bg-[#1f1f1f] border border-[#2d2d2d] rounded-lg py-2 pl-10 pr-4 text-sm focus:outline-none focus:border-[#0066cc] transition-colors text-gray-200 placeholder:text-gray-600"
-            />
-          </div>
+          <Input
+            variant="field"
+            id="input-keyword"
+            type="text"
+            placeholder="Search business/keywords..."
+            icon="lucide:search"
+          />
+          <Input
+            variant="field"
+            id="input-location"
+            type="text"
+            placeholder="Location (e.g. Bandung, Jakarta)"
+            icon="lucide:navigation"
+          />
+          <Input
+            variant="field"
+            id="input-max-results"
+            type="number"
+            min={1}
+            max={500}
+            value={10}
+            placeholder="10"
+            title="Target listing (tanpa website, wajib ada nomor telepon)"
+            icon="lucide:hash"
+          />
           <p class="text-[10px] text-gray-500 leading-relaxed">
             Target = jumlah listing tanpa website + ada nomor (sama seperti
             aplikasi Go). Dari FE, backend jalan <strong class="text-gray-400"
@@ -73,10 +60,7 @@ const apiBase = import.meta.env.PUBLIC_API_URL ?? "http://127.0.0.1:8080";
         </div>
       </section>
       <section>
-        <label
-          class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3"
-          >Filters & Parameters</label
-        >
+        <Label variant="section">Filters & Parameters</Label>
         <div class="space-y-4">
           <div>
             <div class="flex justify-between text-xs mb-2">
@@ -85,25 +69,25 @@ const apiBase = import.meta.env.PUBLIC_API_URL ?? "http://127.0.0.1:8080";
                 ><span id="radius-label">15</span> km</span
               >
             </div>
-            <input
+            <Input
+              variant="range"
               id="input-radius"
-              type="range"
-              min="1"
-              max="50"
-              value="15"
-              class="w-full accent-[#0066cc]"
+              min={1}
+              max={50}
+              value={15}
             />
           </div>
           <div>
-            <select
-              class="w-full bg-[#1f1f1f] border border-[#2d2d2d] rounded-lg py-2 px-3 text-sm focus:outline-none focus:border-[#0066cc] text-gray-200"
+            <Input
+              variant="select"
+              selectClass="w-full bg-[#1f1f1f] border border-[#2d2d2d] rounded-lg py-2 px-3 text-sm focus:outline-none focus:border-[#0066cc] text-gray-200"
             >
               <option>All Categories</option>
               <option>Restaurants</option>
               <option>Real Estate</option>
               <option>Legal Services</option>
               <option>Dental Clinics</option>
-            </select>
+            </Input>
           </div>
           <div class="flex gap-2 text-sm">
             <div
@@ -126,10 +110,7 @@ const apiBase = import.meta.env.PUBLIC_API_URL ?? "http://127.0.0.1:8080";
         </div>
       </section>
       <section>
-        <label
-          class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3"
-          >Bulk Operations</label
-        >
+        <Label variant="section">Bulk Operations</Label>
         <div
           class="border-2 border-dashed border-[#2d2d2d] rounded-xl p-4 text-center hover:border-[#0066cc] transition-colors group cursor-pointer"
         >
@@ -151,34 +132,21 @@ const apiBase = import.meta.env.PUBLIC_API_URL ?? "http://127.0.0.1:8080";
               class="group-open:rotate-180 transition-transform"></iconify-icon>
           </summary>
           <div class="pt-4 space-y-3">
-            <label class="flex items-center gap-3 cursor-pointer">
-              <input
-                type="checkbox"
-                class="w-4 h-4 rounded bg-[#1f1f1f] border-[#2d2d2d] text-[#0066cc] focus:ring-0"
-                checked
-              />
+            <Input variant="checkbox" checked={true}>
               <span class="text-sm text-gray-400">Skip existing records</span>
-            </label>
-            <label class="flex items-center gap-3 cursor-pointer">
-              <input
-                type="checkbox"
-                class="w-4 h-4 rounded bg-[#1f1f1f] border-[#2d2d2d] text-[#0066cc] focus:ring-0"
-              />
+            </Input>
+            <Input variant="checkbox">
               <span class="text-sm text-gray-400">Scrape email addresses</span>
-            </label>
+            </Input>
           </div>
         </details>
       </section>
     </div>
     <div class="p-6 border-t border-[#2d2d2d]">
-      <button
-        id="start-scrape-btn"
-        type="button"
-        class="w-full bg-[#0066cc] hover:bg-[#0052a3] text-white font-semibold py-3 rounded-xl transition-all flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(0,102,204,0.3)]"
-      >
+      <Button variant="primary" id="start-scrape-btn">
         <iconify-icon icon="lucide:play-circle"></iconify-icon>
         Start Scraping
-      </button>
+      </Button>
     </div>
   </aside>
 
@@ -197,37 +165,94 @@ const apiBase = import.meta.env.PUBLIC_API_URL ?? "http://127.0.0.1:8080";
             id="header-status-dot"
             class="w-2 h-2 rounded-full bg-amber-400 animate-pulse shrink-0"
           ></span>
-          <span id="header-status-text" class="truncate">Mengecek backend…</span>
-        </div>
-        <div class="h-4 w-px bg-[#2d2d2d] hidden sm:block"></div>
-        <div class="text-sm text-gray-400 hidden md:block">
-          <span class="text-white font-medium">API:</span>
-          <span
-            id="header-api-url"
-            class="truncate max-w-48 lg:max-w-xs font-mono text-[11px]"
-            >{apiBase}</span
+          <span id="header-status-text" class="truncate">Mengecek backend…</span
           >
         </div>
-      </div>
-      <div class="flex items-center gap-1 sm:gap-3 shrink-0">
-        <button
-          type="button"
-          class="p-2 text-gray-400 hover:text-white transition-colors"
-          aria-label="Notifications"
+        <div class="h-4 w-px bg-[#2d2d2d] hidden sm:block"></div>
+        <div
+          class="text-sm text-gray-400 hidden md:flex flex-wrap items-center gap-x-3 gap-y-1 min-w-0"
         >
-          <iconify-icon icon="lucide:bell" class="text-xl"></iconify-icon>
-        </button>
-        <button
-          type="button"
-          class="p-2 text-gray-400 hover:text-white transition-colors"
-          aria-label="Settings"
+          <span class="truncate max-w-[min(100%,14rem)] lg:max-w-xs">
+            <span class="text-white font-medium">API:</span>
+            <span id="header-api-url" class="font-mono text-[11px]"
+              >{apiBase}</span
+            >
+          </span>
+          <span class="h-3 w-px bg-[#2d2d2d] shrink-0" aria-hidden="true"
+          ></span>
+          <span class="shrink-0">
+            <span class="text-white font-medium">Proxy:</span>
+            <span id="header-proxy-label" class="text-gray-300"
+              >Aktif (DE-104)</span
+            >
+          </span>
+        </div>
+      </div>
+      <div class="flex items-center gap-0.5 sm:gap-2 shrink-0">
+        <Button
+          variant="soft"
+          id="download-app-trigger"
+          ariaLabel="Download aplikasi desktop"
+        >
+          <iconify-icon
+            icon="lucide:download-cloud"
+            class="text-lg sm:text-base"></iconify-icon>
+          <span class="hidden sm:inline">Download App</span>
+        </Button>
+        <div class="relative shrink-0" id="notification-anchor">
+          <Button
+            variant="ghostNotify"
+            id="notification-trigger"
+            ariaLabel="Notifikasi"
+            ariaExpanded={false}
+            ariaHaspopup={true}
+            ariaControls="notification-panel"
+          >
+            <iconify-icon icon="lucide:bell" class="text-xl"></iconify-icon>
+            <span
+              id="notification-dot"
+              class="pointer-events-none absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#0066cc] ring-2 ring-[#161616] hidden"
+              aria-hidden="true"></span>
+          </Button>
+          <div
+            id="notification-panel"
+            role="region"
+            aria-label="Daftar notifikasi"
+            class="absolute top-full right-0 mt-2 w-[min(calc(100vw-2rem),20rem)] rounded-xl border border-[#2d2d2d] bg-[#161616] shadow-2xl z-[90] hidden max-h-[min(70vh,22rem)] overflow-hidden"
+          >
+            <div
+              class="px-4 py-3 border-b border-[#2d2d2d] flex items-center justify-between gap-2 shrink-0"
+            >
+              <span class="text-sm font-bold text-white">Notifikasi</span>
+              <Button
+                variant="textLinkAccent"
+                id="notification-clear-all"
+                type="button"
+              >
+                Hapus semua
+              </Button>
+            </div>
+            <div
+              id="notification-list"
+              class="overflow-y-auto custom-scrollbar flex-1 p-2 min-h-[4rem]"
+            >
+            </div>
+          </div>
+        </div>
+        <Button
+          variant="ghost"
+          id="settings-modal-trigger"
+          ariaLabel="Settings"
         >
           <iconify-icon icon="lucide:settings" class="text-xl"></iconify-icon>
-        </button>
-        <div
-          class="w-8 h-8 rounded-full bg-gradient-to-tr from-gray-700 to-gray-500 border border-[#2d2d2d]"
+        </Button>
+        <Button
+          variant="ghostHeart"
+          id="social-modal-trigger"
+          ariaLabel="Follow us"
         >
-        </div>
+          <iconify-icon icon="lucide:heart" class="text-xl"></iconify-icon>
+        </Button>
       </div>
     </header>
 
@@ -264,7 +289,8 @@ const apiBase = import.meta.env.PUBLIC_API_URL ?? "http://127.0.0.1:8080";
           · OSM + Carto (gelap). Titik
           <span class="text-gray-500">contoh</span>
           sebelum scraping. Setelah
-          <strong class="text-gray-300">Start Scraping</strong>, peta fokus ke lokasi (geocode) + hasil.
+          <strong class="text-gray-300">Start Scraping</strong>, peta fokus ke
+          lokasi (geocode) + hasil.
         </div>
 
         <div
@@ -370,11 +396,7 @@ const apiBase = import.meta.env.PUBLIC_API_URL ?? "http://127.0.0.1:8080";
           <div
             class="bg-[#161616]/95 backdrop-blur-md border border-[#2d2d2d] p-3 rounded-xl max-h-40 overflow-y-auto custom-scrollbar"
           >
-            <p
-              class="text-[10px] text-gray-500 uppercase tracking-widest font-bold mb-2"
-            >
-              Log scraping
-            </p>
+            <Label variant="caption">Log scraping</Label>
             <pre
               id="scrape-log"
               class="text-[10px] text-gray-400 font-mono whitespace-pre-wrap break-words m-0 leading-relaxed">Menunggu job…</pre>
@@ -384,30 +406,18 @@ const apiBase = import.meta.env.PUBLIC_API_URL ?? "http://127.0.0.1:8080";
         <div
           class="absolute top-6 right-6 z-20 flex bg-[#161616]/95 border border-[#2d2d2d] rounded-lg p-1 shadow-xl"
         >
-          <button
-            id="map-view-toggle"
-            type="button"
-            class="flex items-center gap-2 px-3 py-1.5 bg-[#0066cc] text-white rounded-md text-xs font-bold transition-all"
-          >
+          <Button variant="toggleOn" id="map-view-toggle" type="button">
             <iconify-icon icon="lucide:map"></iconify-icon> Map
-          </button>
-          <button
-            id="list-view-toggle"
-            type="button"
-            class="flex items-center gap-2 px-3 py-1.5 text-gray-500 hover:text-white rounded-md text-xs font-bold transition-all"
-          >
+          </Button>
+          <Button variant="toggleOff" id="list-view-toggle" type="button">
             <iconify-icon icon="lucide:list"></iconify-icon> List
-          </button>
+          </Button>
         </div>
 
         <div
           class="absolute bottom-6 left-6 z-20 bg-[#161616]/95 backdrop-blur-md border border-[#2d2d2d] p-3 rounded-xl shadow-xl space-y-2 max-sm:hidden"
         >
-          <p
-            class="text-[9px] text-gray-500 uppercase tracking-widest font-bold mb-1"
-          >
-            Rating Legend
-          </p>
+          <Label variant="legend">Rating Legend</Label>
           <div class="grid grid-cols-1 gap-1.5">
             <div class="flex items-center gap-2">
               <div class="w-2.5 h-2.5 rounded-full bg-[#FFD700]"></div>
@@ -433,31 +443,32 @@ const apiBase = import.meta.env.PUBLIC_API_URL ?? "http://127.0.0.1:8080";
         </div>
 
         <div class="absolute bottom-6 right-6 z-20 flex flex-col gap-2">
-          <button
+          <Button
+            variant="mapTool"
             id="map-zoom-in"
             type="button"
-            class="w-10 h-10 bg-[#161616]/95 border border-[#2d2d2d] rounded-lg flex items-center justify-center text-gray-400 hover:text-white hover:bg-[#1f1f1f] transition-all"
-            aria-label="Zoom in"
+            ariaLabel="Zoom in"
           >
             <iconify-icon icon="lucide:plus" class="text-lg"></iconify-icon>
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="mapTool"
             id="map-zoom-out"
             type="button"
-            class="w-10 h-10 bg-[#161616]/95 border border-[#2d2d2d] rounded-lg flex items-center justify-center text-gray-400 hover:text-white hover:bg-[#1f1f1f] transition-all"
-            aria-label="Zoom out"
+            ariaLabel="Zoom out"
           >
             <iconify-icon icon="lucide:minus" class="text-lg"></iconify-icon>
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="mapTool"
             id="map-recenter"
             type="button"
-            class="w-10 h-10 bg-[#161616]/95 border border-[#2d2d2d] rounded-lg flex items-center justify-center text-gray-400 hover:text-white hover:bg-[#1f1f1f] transition-all mt-2"
-            aria-label="Recenter"
+            class="mt-2"
+            ariaLabel="Recenter"
           >
             <iconify-icon icon="lucide:navigation-2" class="text-lg"
             ></iconify-icon>
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -473,20 +484,12 @@ const apiBase = import.meta.env.PUBLIC_API_URL ?? "http://127.0.0.1:8080";
             Results (0)
           </h3>
           <div class="flex items-center gap-2">
-            <button
-              type="button"
-              class="p-1.5 bg-[#1f1f1f] border border-[#2d2d2d] rounded-md text-gray-400 hover:text-white"
-              aria-label="Filter"
-            >
+            <Button variant="iconSq" type="button" ariaLabel="Filter">
               <iconify-icon icon="lucide:filter"></iconify-icon>
-            </button>
-            <button
-              type="button"
-              class="p-1.5 bg-[#1f1f1f] border border-[#2d2d2d] rounded-md text-gray-400 hover:text-white"
-              aria-label="Columns"
-            >
+            </Button>
+            <Button variant="iconSq" type="button" ariaLabel="Columns">
               <iconify-icon icon="lucide:columns"></iconify-icon>
-            </button>
+            </Button>
           </div>
         </div>
         <div
@@ -516,27 +519,15 @@ const apiBase = import.meta.env.PUBLIC_API_URL ?? "http://127.0.0.1:8080";
             class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4"
           >
             <div class="flex flex-wrap gap-2">
-              <button
-                id="export-csv-btn"
-                type="button"
-                class="px-3 py-1.5 bg-[#1f1f1f] border border-[#2d2d2d] rounded text-xs font-semibold hover:border-[#0066cc] transition-all flex items-center gap-2 text-gray-200"
-              >
+              <Button variant="outline" id="export-csv-btn" type="button">
                 <iconify-icon icon="lucide:file-text"></iconify-icon> CSV
-              </button>
-              <button
-                id="export-json-btn"
-                type="button"
-                class="px-3 py-1.5 bg-[#1f1f1f] border border-[#2d2d2d] rounded text-xs font-semibold hover:border-[#0066cc] transition-all flex items-center gap-2 text-gray-200"
-              >
+              </Button>
+              <Button variant="outline" id="export-json-btn" type="button">
                 <iconify-icon icon="lucide:code"></iconify-icon> JSON
-              </button>
-              <button
-                id="export-xlsx-btn"
-                type="button"
-                class="px-3 py-1.5 bg-[#1f1f1f] border border-[#2d2d2d] rounded text-xs font-semibold hover:border-[#0066cc] transition-all flex items-center gap-2 text-gray-200"
-              >
+              </Button>
+              <Button variant="outline" id="export-xlsx-btn" type="button">
                 <iconify-icon icon="lucide:table"></iconify-icon> EXCEL
-              </button>
+              </Button>
             </div>
           </div>
           <div
@@ -544,38 +535,19 @@ const apiBase = import.meta.env.PUBLIC_API_URL ?? "http://127.0.0.1:8080";
           >
             <p id="results-pagination-text">Belum ada data</p>
             <div class="flex gap-1">
-              <button
+              <Button
+                variant="pagination"
                 type="button"
-                class="w-8 h-8 flex items-center justify-center rounded border border-[#2d2d2d] hover:bg-[#1f1f1f] text-gray-400"
-                aria-label="Previous page"
+                ariaLabel="Previous page"
               >
                 <iconify-icon icon="lucide:chevron-left"></iconify-icon>
-              </button>
-              <button
-                type="button"
-                class="w-8 h-8 flex items-center justify-center rounded border border-[#0066cc] bg-[#0066cc]/10 text-white"
-              >
-                1
-              </button>
-              <button
-                type="button"
-                class="w-8 h-8 flex items-center justify-center rounded border border-[#2d2d2d] hover:bg-[#1f1f1f] text-gray-400"
-              >
-                2
-              </button>
-              <button
-                type="button"
-                class="w-8 h-8 flex items-center justify-center rounded border border-[#2d2d2d] hover:bg-[#1f1f1f] text-gray-400"
-              >
-                3
-              </button>
-              <button
-                type="button"
-                class="w-8 h-8 flex items-center justify-center rounded border border-[#2d2d2d] hover:bg-[#1f1f1f] text-gray-400"
-                aria-label="Next page"
-              >
+              </Button>
+              <Button variant="paginationActive" type="button">1</Button>
+              <Button variant="pagination" type="button">2</Button>
+              <Button variant="pagination" type="button">3</Button>
+              <Button variant="pagination" type="button" ariaLabel="Next page">
                 <iconify-icon icon="lucide:chevron-right"></iconify-icon>
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -591,11 +563,7 @@ const apiBase = import.meta.env.PUBLIC_API_URL ?? "http://127.0.0.1:8080";
           class="bg-[#161616] border border-[#2d2d2d] rounded-2xl p-5 hover:border-[#0066cc]/50 transition-all group shadow-lg"
         >
           <div class="flex items-center justify-between mb-4">
-            <h4
-              class="text-[10px] font-bold text-gray-500 uppercase tracking-widest"
-            >
-              Location Summary
-            </h4>
+            <Label variant="cardTitle" as="h4">Location Summary</Label>
             <iconify-icon
               icon="lucide:info"
               class="text-gray-600 group-hover:text-[#0066cc] transition-colors"
@@ -636,11 +604,7 @@ const apiBase = import.meta.env.PUBLIC_API_URL ?? "http://127.0.0.1:8080";
           class="bg-[#161616] border border-[#2d2d2d] rounded-2xl p-5 hover:border-[#0066cc]/50 transition-all group shadow-lg"
         >
           <div class="flex items-center justify-between mb-4">
-            <h4
-              class="text-[10px] font-bold text-gray-500 uppercase tracking-widest"
-            >
-              Rating Distribution
-            </h4>
+            <Label variant="cardTitle" as="h4">Rating Distribution</Label>
             <iconify-icon
               icon="lucide:bar-chart-3"
               class="text-gray-600 group-hover:text-[#0066cc] transition-colors"
@@ -708,11 +672,7 @@ const apiBase = import.meta.env.PUBLIC_API_URL ?? "http://127.0.0.1:8080";
           class="bg-[#161616] border border-[#2d2d2d] rounded-2xl p-5 hover:border-[#0066cc]/50 transition-all group shadow-lg"
         >
           <div class="flex items-center justify-between mb-4">
-            <h4
-              class="text-[10px] font-bold text-gray-500 uppercase tracking-widest"
-            >
-              Quick Stats
-            </h4>
+            <Label variant="cardTitle" as="h4">Quick Stats</Label>
             <iconify-icon
               icon="lucide:activity"
               class="text-gray-600 group-hover:text-[#0066cc] transition-colors"
@@ -757,11 +717,7 @@ const apiBase = import.meta.env.PUBLIC_API_URL ?? "http://127.0.0.1:8080";
           class="bg-[#161616] border border-[#2d2d2d] rounded-2xl p-5 hover:border-[#0066cc]/50 transition-all group shadow-lg"
         >
           <div class="flex items-center justify-between mb-4">
-            <h4
-              class="text-[10px] font-bold text-gray-500 uppercase tracking-widest"
-            >
-              Top Rated
-            </h4>
+            <Label variant="cardTitle" as="h4">Top Rated</Label>
             <iconify-icon
               icon="lucide:award"
               class="text-gray-600 group-hover:text-[#0066cc] transition-colors"
@@ -833,451 +789,410 @@ const apiBase = import.meta.env.PUBLIC_API_URL ?? "http://127.0.0.1:8080";
   </main>
 </div>
 
-<!-- Skrip ringan dulu: cek /api/health tanpa impor Leaflet (tidak tertahan chunk peta). -->
-<script define:vars={{ apiBase }}>
-  {
-    const pill = document.getElementById("header-status-pill");
-    const text = document.getElementById("header-status-text");
-    const dot = document.getElementById("header-status-dot");
-    if (pill && text) {
-      const setDot = (cls) => {
-        if (dot) dot.className = cls;
-      };
-      const timeoutMs = 8000;
-      const ctrl = new AbortController();
-      const timer = window.setTimeout(() => ctrl.abort(), timeoutMs);
-      fetch(`${apiBase}/api/health`, { signal: ctrl.signal })
-        .then((r) => {
-          window.clearTimeout(timer);
-          if (!r.ok) return Promise.reject();
-          return r.json();
-        })
-        .then((j) => {
-          if (j?.ok) {
-            text.textContent = "Backend siap";
-            pill.className =
-              "flex items-center gap-2 px-3 py-1 rounded-full border text-xs font-medium bg-green-500/10 border-green-500/20 text-green-500";
-            setDot("w-2 h-2 rounded-full bg-green-500 animate-pulse shrink-0");
-          } else {
-            throw new Error("bad");
-          }
-        })
-        .catch(() => {
-          window.clearTimeout(timer);
-          text.textContent = "Backend offline";
-          pill.className =
-            "flex items-center gap-2 px-3 py-1 rounded-full border text-xs font-medium bg-red-500/10 border-red-500/20 text-red-400";
-          setDot("w-2 h-2 rounded-full bg-red-400 shrink-0");
-        });
-    }
-  }
-</script>
+<!-- Download desktop (placeholder — tautan rilis bisa disetel nanti) -->
+<Dialog
+  id="download-modal"
+  zIndex={10000}
+  panelClass="max-w-4xl max-h-[95vh] overflow-y-auto custom-scrollbar p-6 sm:p-8"
+>
+  <div class="mb-8 sm:mb-10">
+    <div class="flex items-center gap-4 mb-2">
+      <div
+        class="w-12 h-12 bg-[#0066cc] rounded-xl flex items-center justify-center shrink-0"
+      >
+        <iconify-icon icon="lucide:monitor" class="text-white text-2xl"
+        ></iconify-icon>
+      </div>
+      <div class="min-w-0">
+        <h2 class="text-xl sm:text-2xl font-bold text-white">
+          Download MapsScraper Pro Desktop
+        </h2>
+        <p class="text-gray-500 text-sm">
+          Lead generation penuh di desktop (rilis menyusul)
+        </p>
+      </div>
+    </div>
+  </div>
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10 sm:mb-12">
+    <div
+      class="bg-[#1f1f1f] border border-[#2d2d2d] rounded-2xl p-6 hover:border-[#0066cc]/50 transition-all flex flex-col items-center text-center"
+    >
+      <iconify-icon
+        icon="mdi:microsoft-windows"
+        class="text-5xl text-[#0066cc] mb-4"></iconify-icon>
+      <h3 class="text-lg font-bold text-white mb-1">Windows</h3>
+      <p
+        class="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-4"
+      >
+        v2.1.0 • 85 MB
+      </p>
+      <Button variant="downloadPrimary" type="button">
+        <iconify-icon icon="lucide:download"></iconify-icon> Download .exe
+      </Button>
+    </div>
+    <div
+      class="bg-[#1f1f1f] border border-[#2d2d2d] rounded-2xl p-6 hover:border-[#0066cc]/50 transition-all flex flex-col items-center text-center"
+    >
+      <iconify-icon icon="mdi:apple" class="text-5xl text-gray-400 mb-4"
+      ></iconify-icon>
+      <h3 class="text-lg font-bold text-white mb-1">macOS</h3>
+      <p
+        class="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-4"
+      >
+        v2.1.0 • 92 MB
+      </p>
+      <Button variant="downloadMuted" type="button">
+        <iconify-icon icon="lucide:download"></iconify-icon> Download .dmg
+      </Button>
+    </div>
+    <div
+      class="bg-[#1f1f1f] border border-[#2d2d2d] rounded-2xl p-6 hover:border-[#0066cc]/50 transition-all flex flex-col items-center text-center"
+    >
+      <iconify-icon icon="mdi:linux" class="text-5xl text-orange-500 mb-4"
+      ></iconify-icon>
+      <h3 class="text-lg font-bold text-white mb-1">Linux</h3>
+      <p
+        class="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-4"
+      >
+        v2.1.0 • 78 MB
+      </p>
+      <Button variant="downloadMuted" type="button">
+        <iconify-icon icon="lucide:download"></iconify-icon> .AppImage
+      </Button>
+    </div>
+  </div>
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
+    <div>
+      <Label variant="bar" as="h4">
+        <iconify-icon icon="lucide:clipboard-list" class="text-[#0066cc]"
+        ></iconify-icon>
+        What's New in v2.1.0
+      </Label>
+      <ul class="space-y-3">
+        <li class="flex items-start gap-3">
+          <div class="mt-1.5 w-1.5 h-1.5 rounded-full bg-[#0066cc] shrink-0">
+          </div>
+          <p class="text-sm text-gray-400">
+            <span class="text-white font-bold">New:</span> Pelacakan lead real-time
+            + pin peta interaktif.
+          </p>
+        </li>
+        <li class="flex items-start gap-3">
+          <div class="mt-1.5 w-1.5 h-1.5 rounded-full bg-[#0066cc] shrink-0">
+          </div>
+          <p class="text-sm text-gray-400">
+            <span class="text-white font-bold">Improved:</span> Rotasi multi-proxy
+            untuk scraping lebih cepat.
+          </p>
+        </li>
+        <li class="flex items-start gap-3">
+          <div class="mt-1.5 w-1.5 h-1.5 rounded-full bg-[#0066cc] shrink-0">
+          </div>
+          <p class="text-sm text-gray-400">
+            <span class="text-white font-bold">Fixed:</span> Metadata bisnis dengan
+            nomor tersembunyi.
+          </p>
+        </li>
+      </ul>
+    </div>
+    <div>
+      <Label variant="bar" as="h4">
+        <iconify-icon icon="lucide:settings-2" class="text-[#0066cc]"
+        ></iconify-icon>
+        System Requirements
+      </Label>
+      <div class="space-y-4">
+        <div
+          class="flex justify-between items-center border-b border-[#2d2d2d] pb-2 gap-4"
+        >
+          <span class="text-xs text-gray-500">Windows</span>
+          <span class="text-xs text-gray-400 text-right"
+            >10+ (64-bit), 4GB RAM</span
+          >
+        </div>
+        <div
+          class="flex justify-between items-center border-b border-[#2d2d2d] pb-2 gap-4"
+        >
+          <span class="text-xs text-gray-500">macOS</span>
+          <span class="text-xs text-gray-400 text-right">10.13+, 4GB RAM</span>
+        </div>
+        <div
+          class="flex justify-between items-center border-b border-[#2d2d2d] pb-2 gap-4"
+        >
+          <span class="text-xs text-gray-500">Linux</span>
+          <span class="text-xs text-gray-400 text-right"
+            >Ubuntu 18.04+, 4GB RAM</span
+          >
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="mt-10 pt-6 border-t border-[#2d2d2d] flex justify-center">
+    <a
+      id="all-releases-link"
+      href="#"
+      class="text-[#0066cc] text-xs font-bold hover:underline flex items-center gap-1"
+    >
+      View all releases &amp; changelogs
+      <iconify-icon icon="lucide:external-link"></iconify-icon>
+    </a>
+  </div>
+</Dialog>
 
-<script define:vars={{ apiBase }}>
-  /** Dynamic import: kalau Leaflet/chunk peta gagal, skrip ini tetap jalan (tombol Start, fetch API). */
-  let mapModPromise = null;
-  function getMapMod() {
-    if (!mapModPromise) mapModPromise = import("../lib/dashboardMap");
-    return mapModPromise;
-  }
+<!-- Social -->
+<Dialog
+  id="social-modal"
+  zIndex={10010}
+  panelClass="max-w-sm p-6"
+  closeButtonClass="absolute top-4 right-4 text-gray-500 hover:text-white transition-colors"
+  closeIconClass="text-xl"
+>
+  <div class="mb-6">
+    <h2 class="text-xl font-bold text-white">Follow Us</h2>
+    <p class="text-gray-500 text-xs">Update fitur dan berita terbaru</p>
+  </div>
+  <div class="space-y-3">
+    <a
+      id="follow-twitter-link"
+      href="https://twitter.com"
+      target="_blank"
+      rel="noopener noreferrer"
+      class="flex items-center justify-between p-3 bg-[#1f1f1f] border border-[#2d2d2d] rounded-xl hover:border-[#0066cc]/50 transition-all group"
+    >
+      <div class="flex items-center gap-3 min-w-0">
+        <iconify-icon
+          icon="mdi:twitter"
+          class="text-2xl text-[#1DA1F2] shrink-0"></iconify-icon>
+        <div class="min-w-0">
+          <p class="text-sm font-bold text-white">Twitter / X</p>
+          <p class="text-[10px] text-gray-500 truncate">@mapsscraper_pro</p>
+        </div>
+      </div>
+      <span
+        class="text-[10px] font-bold text-[#0066cc] uppercase px-3 py-1 bg-[#0066cc]/10 rounded-lg group-hover:bg-[#0066cc] group-hover:text-white transition-all shrink-0"
+        >Follow</span
+      >
+    </a>
+    <a
+      id="follow-linkedin-link"
+      href="https://linkedin.com"
+      target="_blank"
+      rel="noopener noreferrer"
+      class="flex items-center justify-between p-3 bg-[#1f1f1f] border border-[#2d2d2d] rounded-xl hover:border-[#0066cc]/50 transition-all group"
+    >
+      <div class="flex items-center gap-3 min-w-0">
+        <iconify-icon
+          icon="mdi:linkedin"
+          class="text-2xl text-[#0A66C2] shrink-0"></iconify-icon>
+        <div class="min-w-0">
+          <p class="text-sm font-bold text-white">LinkedIn</p>
+          <p class="text-[10px] text-gray-500 truncate">MapsScraper Pro</p>
+        </div>
+      </div>
+      <span
+        class="text-[10px] font-bold text-[#0066cc] uppercase px-3 py-1 bg-[#0066cc]/10 rounded-lg group-hover:bg-[#0066cc] group-hover:text-white transition-all shrink-0"
+        >Follow</span
+      >
+    </a>
+    <a
+      id="follow-github-link"
+      href="https://github.com"
+      target="_blank"
+      rel="noopener noreferrer"
+      class="flex items-center justify-between p-3 bg-[#1f1f1f] border border-[#2d2d2d] rounded-xl hover:border-[#0066cc]/50 transition-all group"
+    >
+      <div class="flex items-center gap-3 min-w-0">
+        <iconify-icon icon="mdi:github" class="text-2xl text-white shrink-0"
+        ></iconify-icon>
+        <div class="min-w-0">
+          <p class="text-sm font-bold text-white">GitHub</p>
+          <p class="text-[10px] text-gray-500 truncate">
+            @mapsscraper-official
+          </p>
+        </div>
+      </div>
+      <span
+        class="text-[10px] font-bold text-[#0066cc] uppercase px-3 py-1 bg-[#0066cc]/10 rounded-lg group-hover:bg-[#0066cc] group-hover:text-white transition-all shrink-0"
+        >Follow</span
+      >
+    </a>
+    <a
+      id="follow-instagram-link"
+      href="https://instagram.com"
+      target="_blank"
+      rel="noopener noreferrer"
+      class="flex items-center justify-between p-3 bg-[#1f1f1f] border border-[#2d2d2d] rounded-xl hover:border-[#0066cc]/50 transition-all group"
+    >
+      <div class="flex items-center gap-3 min-w-0">
+        <iconify-icon
+          icon="mdi:instagram"
+          class="text-2xl text-[#E4405F] shrink-0"></iconify-icon>
+        <div class="min-w-0">
+          <p class="text-sm font-bold text-white">Instagram</p>
+          <p class="text-[10px] text-gray-500 truncate">@mapsscraper.pro</p>
+        </div>
+      </div>
+      <span
+        class="text-[10px] font-bold text-[#0066cc] uppercase px-3 py-1 bg-[#0066cc]/10 rounded-lg group-hover:bg-[#0066cc] group-hover:text-white transition-all shrink-0"
+        >Follow</span
+      >
+    </a>
+    <a
+      id="follow-facebook-link"
+      href="https://facebook.com"
+      target="_blank"
+      rel="noopener noreferrer"
+      class="flex items-center justify-between p-3 bg-[#1f1f1f] border border-[#2d2d2d] rounded-xl hover:border-[#0066cc]/50 transition-all group"
+    >
+      <div class="flex items-center gap-3 min-w-0">
+        <iconify-icon
+          icon="mdi:facebook"
+          class="text-2xl text-[#1877F2] shrink-0"></iconify-icon>
+        <div class="min-w-0">
+          <p class="text-sm font-bold text-white">Facebook</p>
+          <p class="text-[10px] text-gray-500 truncate">MapsScraper Pro</p>
+        </div>
+      </div>
+      <span
+        class="text-[10px] font-bold text-[#0066cc] uppercase px-3 py-1 bg-[#0066cc]/10 rounded-lg group-hover:bg-[#0066cc] group-hover:text-white transition-all shrink-0"
+        >Follow</span
+      >
+    </a>
+  </div>
+</Dialog>
 
-  async function safeIdleMap() {
-    try {
-      (await getMapMod()).showIdlePreviewMap();
-    } catch (e) {
-      console.warn("Peta idle:", e);
-    }
-  }
+<!-- Settings + sound -->
+<Dialog
+  id="settings-modal"
+  zIndex={10020}
+  panelClass="max-w-2xl max-h-[90vh] overflow-y-auto custom-scrollbar p-6 sm:p-8"
+>
+  <div class="mb-8">
+    <h2 class="text-2xl font-bold text-white mb-1">Application Settings</h2>
+    <p class="text-gray-500 text-sm">
+      Notifikasi suara dan riwayat sesi di perangkat ini
+    </p>
+  </div>
+  <div class="space-y-8">
+    <section>
+      <div class="flex items-center justify-between gap-4 mb-4">
+        <div class="min-w-0">
+          <Label variant="subsection" as="h3">Sound Notifications</Label>
+          <Label variant="muted" class="mt-1 block">
+            Bunyi saat tracking / scraping selesai
+          </Label>
+        </div>
+        <div class="flex items-center gap-3 shrink-0">
+          <span
+            id="notification-sound-state"
+            class="text-[10px] font-bold text-gray-400 uppercase">On</span
+          >
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              id="notification-sound-toggle"
+              class="sr-only peer"
+              checked
+            />
+            <div
+              class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#0066cc]"
+            >
+            </div>
+          </label>
+        </div>
+      </div>
+      <div class="space-y-2">
+        <Label variant="field" for="notification-sound-select">
+          Notification Sound
+        </Label>
+        <Input
+          variant="select"
+          id="notification-sound-select"
+          showChevron={true}
+        >
+          <option value="bell">Bell (Default)</option>
+          <option value="chime">Chime</option>
+          <option value="notification">Notification</option>
+          <option value="success">Success Tone</option>
+          <option value="alert">Alert Beep</option>
+        </Input>
+      </div>
+    </section>
+    <section>
+      <Label variant="subsection" as="h3" class="mb-4">
+        Previous Tracking Sessions
+      </Label>
+      <div
+        class="bg-[#1f1f1f] border border-[#2d2d2d] rounded-xl overflow-hidden"
+      >
+        <div class="max-h-60 overflow-y-auto custom-scrollbar">
+          <table class="w-full text-left border-collapse">
+            <thead
+              class="bg-[#161616] sticky top-0 z-10 border-b border-[#2d2d2d]"
+            >
+              <tr
+                class="text-[9px] font-bold text-gray-500 uppercase tracking-widest"
+              >
+                <th class="px-4 py-3 w-10">
+                  <Input
+                    variant="checkbox"
+                    id="settings-sessions-select-all"
+                    checkboxClass="rounded border-[#2d2d2d] bg-[#1a1a1a] text-[#0066cc] focus:ring-0"
+                    title="Pilih semua"
+                  />
+                </th>
+                <th class="px-4 py-3">Date / Session</th>
+                <th class="px-4 py-3">Location</th>
+                <th class="px-4 py-3 text-right">Results</th>
+              </tr>
+            </thead>
+            <tbody
+              id="settings-sessions-tbody"
+              class="divide-y divide-[#2d2d2d]"
+            >
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div
+        class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-4"
+      >
+        <div class="flex flex-wrap gap-2">
+          <Button
+            variant="settingsBar"
+            type="button"
+            id="settings-sessions-restore"
+          >
+            <iconify-icon icon="lucide:refresh-cw"></iconify-icon> Restore Selected
+          </Button>
+          <Button
+            variant="dangerBar"
+            type="button"
+            id="settings-sessions-delete"
+          >
+            <iconify-icon icon="lucide:trash-2"></iconify-icon> Delete Selected
+          </Button>
+        </div>
+        <Button variant="textLink" type="button" id="settings-sessions-clear">
+          Clear All History
+        </Button>
+      </div>
+    </section>
+  </div>
+  <div class="mt-10 pt-6 border-t border-[#2d2d2d] flex justify-end">
+    <Button variant="primaryAction" type="button" id="settings-save-btn">
+      Save &amp; Apply Changes
+    </Button>
+  </div>
+</Dialog>
 
-  function formatCount(n) {
-    if (n == null || !Number.isFinite(n)) return "—";
-    return n.toLocaleString("id-ID");
-  }
+<!-- Tanpa define:vars: Astro membungkusnya dalam IIFE dan `import` jadi invalid → skrip tidak jalan. -->
+<script>
+  import {
+    initScrapMapsDashboard,
+    runBackendHealthCheck,
+  } from "../services/scrapmaps.service";
 
-  function setResultsTable(stores) {
-    const tbody = document.getElementById("results-tbody");
-    const heading = document.getElementById("results-heading");
-    const pag = document.getElementById("results-pagination-text");
-    const totalMap = document.getElementById("dash-total-scraped");
-    const totalFooter = document.getElementById("dash-footer-total");
-    if (!tbody) return;
-    const n = Array.isArray(stores) ? stores.length : 0;
-    if (heading) heading.textContent = `Results (${n})`;
-    if (pag) {
-      pag.textContent = n
-        ? `Menampilkan 1–${n} dari ${n}`
-        : "Belum ada data — jalankan scraping dari sidebar";
-    }
-    const formatted = formatCount(n);
-    if (totalMap) totalMap.textContent = formatted;
-    if (totalFooter) totalFooter.textContent = formatted;
-    if (!n) {
-      tbody.innerHTML =
-        '<tr><td colspan="4" class="px-4 py-10 text-center text-sm text-gray-500 leading-relaxed">Belum ada hasil. Isi <strong class="text-gray-400">keyword</strong>, <strong class="text-gray-400">lokasi</strong>, dan <strong class="text-gray-400">target</strong>, lalu klik <span class="text-[#0066cc] font-medium">Start Scraping</span>.<br/><span class="text-xs mt-2 block text-gray-600">Backend: <code class="text-gray-500">cd be && go run . server</code></span></td></tr>';
-      return;
-    }
-    tbody.innerHTML = "";
-    stores.forEach((s, i) => {
-      const name = (s.name || "").trim() || "—";
-      const addr = (s.address || "").trim() || "—";
-      const phone = (s.phone || "").trim() || "—";
-      const sub = addr.length > 48 ? addr.slice(0, 48) + "…" : addr;
-      const tr = document.createElement("tr");
-      tr.className =
-        "hover:bg-[#1f1f1f] group transition-colors cursor-pointer result-row" +
-        (i === 0 ? " bg-[#0066cc]/5 border-l-2 border-[#0066cc]" : "");
-      tr.dataset.name = name;
-      tr.dataset.sub = sub;
-      tr.dataset.address = addr;
-      tr.dataset.phone = phone;
-      tr.innerHTML = `
-				<td class="px-4 py-3 text-sm">
-					<span class="font-medium block">${escapeHtml(name)}</span>
-					<span class="text-xs text-gray-500">${escapeHtml(sub)}</span>
-				</td>
-				<td class="px-4 py-3">
-					<span class="text-sm font-mono text-gray-600">—</span>
-				</td>
-				<td class="px-4 py-3 text-xs text-gray-400 font-mono">${escapeHtml(phone)}</td>
-				<td class="px-4 py-3 text-right">
-					<button type="button" class="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-[#0066cc] transition-all" aria-label="Detail">
-						<iconify-icon icon="lucide:external-link"></iconify-icon>
-					</button>
-				</td>`;
-      tbody.appendChild(tr);
-    });
-  }
-
-  function escapeHtml(s) {
-    return String(s)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;");
-  }
-
-  function setLog(text) {
-    const el = document.getElementById("scrape-log");
-    if (el) {
-      el.textContent = text;
-      el.scrollTop = el.scrollHeight;
-    }
-  }
-
-  /** phase: idle | running | done — mengikuti data progress dari GET /api/scrape/status */
-  function updateLiveProgress(saved, target, phase) {
-    const fill = document.getElementById("live-progress-fill");
-    const label = document.getElementById("live-progress-label");
-    const dot = document.getElementById("live-progress-dot");
-    if (!fill || !label) return;
-    const t = Math.max(0, Number(target) || 0);
-    const s = Math.max(0, Number(saved) || 0);
-    let pct = 0;
-    if (t > 0) pct = Math.min(100, (s / t) * 100);
-    fill.style.width = `${pct}%`;
-    label.textContent = t > 0 ? `${s} / ${t}` : "—";
-    if (dot) {
-      dot.className = "w-2 h-2 rounded-full shrink-0 ";
-      if (phase === "running") dot.className += "bg-green-500 animate-pulse";
-      else if (phase === "done") dot.className += "bg-green-500";
-      else dot.className += "bg-gray-500";
-    }
-  }
-
-  function setScrapeBusy(busy) {
-    const btn = document.getElementById("start-scrape-btn");
-    if (!btn) return;
-    btn.disabled = busy;
-    btn.classList.toggle("opacity-60", busy);
-    btn.classList.toggle("cursor-not-allowed", busy);
-  }
-
-  function setViewMode(mode) {
-    const mapStage = document.getElementById("map-stage");
-    const results = document.getElementById("results-panel");
-    const split = document.getElementById("dashboard-split");
-    const btnMap = document.getElementById("map-view-toggle");
-    const btnList = document.getElementById("list-view-toggle");
-    if (!mapStage || !results || !split || !btnMap || !btnList) return;
-
-    const active = "bg-[#0066cc] text-white";
-    const inactive = "text-gray-500 hover:text-white bg-transparent";
-
-    if (mode === "list") {
-      mapStage.classList.add("hidden");
-      results.classList.remove("lg:w-[500px]");
-      results.classList.add("lg:flex-1");
-      split.classList.remove("lg:flex-row");
-      split.classList.add("lg:flex-col");
-      btnList.className =
-        "flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-bold transition-all " +
-        active;
-      btnMap.className =
-        "flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-bold transition-all " +
-        inactive;
-    } else {
-      mapStage.classList.remove("hidden");
-      results.classList.add("lg:w-[500px]");
-      results.classList.remove("lg:flex-1");
-      split.classList.add("lg:flex-row");
-      split.classList.remove("lg:flex-col");
-      btnMap.className =
-        "flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-bold transition-all " +
-        active;
-      btnList.className =
-        "flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-bold transition-all " +
-        inactive;
-      void getMapMod()
-        .then((m) => m.invalidateMapSize())
-        .catch(() => {});
-    }
-  }
-
-  function collectRows() {
-    return Array.from(document.querySelectorAll("tr.result-row")).map(
-      (row) => ({
-        name: row.getAttribute("data-name") || "",
-        address:
-          row.getAttribute("data-address") ||
-          row.getAttribute("data-sub") ||
-          "",
-        phone: row.getAttribute("data-phone") || "",
-      }),
-    );
-  }
-
-  function downloadText(filename, text, mime) {
-    const blob = new Blob([text], { type: mime });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(a.href);
-  }
-
-  function wireExports() {
-    document.getElementById("export-csv-btn")?.addEventListener("click", () => {
-      const rows = collectRows();
-      if (!rows.length) {
-        window.alert("Belum ada baris untuk diekspor.");
-        return;
-      }
-      const esc = (s) => '"' + String(s).replace(/"/g, '""') + '"';
-      const lines = [
-        ["name", "address", "phone"].join(","),
-        ...rows.map((r) =>
-          [esc(r.name), esc(r.address), esc(r.phone)].join(","),
-        ),
-      ];
-      downloadText(
-        "maps-scraper-export.csv",
-        lines.join("\n"),
-        "text/csv;charset=utf-8",
-      );
-    });
-    document
-      .getElementById("export-json-btn")
-      ?.addEventListener("click", () => {
-        const rows = collectRows();
-        if (!rows.length) {
-          window.alert("Belum ada baris untuk diekspor.");
-          return;
-        }
-        downloadText(
-          "maps-scraper-export.json",
-          JSON.stringify(rows, null, 2),
-          "application/json;charset=utf-8",
-        );
-      });
-    document
-      .getElementById("export-xlsx-btn")
-      ?.addEventListener("click", () => {
-        window.alert(
-          "Export Excel membutuhkan library tambahan (mis. SheetJS). Gunakan CSV atau JSON untuk saat ini.",
-        );
-      });
-  }
-
-  function wireRadius() {
-    const r = document.getElementById("input-radius");
-    const label = document.getElementById("radius-label");
-    r?.addEventListener("input", () => {
-      if (label) label.textContent = r.value;
-    });
-  }
-
-  document
-    .getElementById("map-view-toggle")
-    ?.addEventListener("click", () => setViewMode("map"));
-  document
-    .getElementById("list-view-toggle")
-    ?.addEventListener("click", () => setViewMode("list"));
-
-  async function startScrapeFromUI() {
-    const kw = document.getElementById("input-keyword")?.value?.trim() || "";
-    const loc = document.getElementById("input-location")?.value?.trim() || "";
-    const maxRaw = document.getElementById("input-max-results")?.value;
-    let maxResults = parseInt(String(maxRaw), 10);
-    if (!Number.isFinite(maxResults) || maxResults < 1) maxResults = 10;
-    if (maxResults > 500) maxResults = 500;
-
-    if (!kw || !loc) {
-      window.alert("Isi keyword bisnis dan lokasi terlebih dahulu.");
-      return;
-    }
-
-    setLog("Mengirim permintaan ke backend…");
-    updateLiveProgress(0, maxResults, "running");
-    setScrapeBusy(true);
-
-    let res;
-    try {
-      res = await fetch(`${apiBase}/api/scrape`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ keyword: kw, location: loc, maxResults }),
-      });
-    } catch {
-      setScrapeBusy(false);
-      updateLiveProgress(0, 0, "idle");
-      void safeIdleMap();
-      setLog(
-        "Gagal menghubungi backend. Pastikan server jalan: go run . server",
-      );
-      window.alert(
-        "Tidak bisa terhubung ke API. Cek URL di .env (PUBLIC_API_URL) dan backend.",
-      );
-      return;
-    }
-
-    let data = {};
-    try {
-      data = await res.json();
-    } catch {
-      data = {};
-    }
-
-    if (res.status === 409) {
-      setScrapeBusy(false);
-      updateLiveProgress(0, 0, "idle");
-      void safeIdleMap();
-      setLog(data.error || "Scraping lain masih berjalan.");
-      window.alert(data.error || "Scraping masih berjalan di server.");
-      return;
-    }
-    if (!res.ok) {
-      setScrapeBusy(false);
-      updateLiveProgress(0, 0, "idle");
-      void safeIdleMap();
-      setLog(data.error || `Error ${res.status}`);
-      window.alert(data.error || `Permintaan ditolak (${res.status})`);
-      return;
-    }
-
-    const jobId = data.jobId;
-    if (!jobId) {
-      setScrapeBusy(false);
-      updateLiveProgress(0, 0, "idle");
-      void safeIdleMap();
-      setLog("Respons tidak berisi jobId.");
-      return;
-    }
-
-    setViewMode("map");
-    try {
-      const m = await getMapMod();
-      m.focusSearchOnMap(data.mapCenter ?? null);
-      m.invalidateMapSize();
-    } catch (e) {
-      console.warn("Peta fokus:", e);
-    }
-
-    setLog(
-      `Job dimulai (${jobId}). Browser headless di server — peta sudah diarahkan ke lokasi; pantau Live tracking + log.`,
-    );
-
-    let pollTimer;
-    const tick = async () => {
-      let st;
-      try {
-        st = await fetch(
-          `${apiBase}/api/scrape/status?jobId=${encodeURIComponent(jobId)}`,
-        );
-      } catch {
-        clearInterval(pollTimer);
-        setScrapeBusy(false);
-        updateLiveProgress(0, 0, "idle");
-        void safeIdleMap();
-        setLog(
-          "Koneksi ke /api/scrape/status putus. Cek backend dan jaringan.",
-        );
-        return;
-      }
-      const j = await st.json().catch(() => ({}));
-      if (!st.ok) {
-        clearInterval(pollTimer);
-        setScrapeBusy(false);
-        updateLiveProgress(0, 0, "idle");
-        void safeIdleMap();
-        setLog((j && j.error) || "Status job gagal diambil.");
-        return;
-      }
-      if (Array.isArray(j.logs)) setLog(j.logs.join("\n"));
-
-      const pr = j.progress;
-      if (pr && typeof pr === "object" && j.status === "running") {
-        updateLiveProgress(pr.saved, pr.target, "running");
-      }
-
-      if (j.status === "running") return;
-
-      clearInterval(pollTimer);
-      setScrapeBusy(false);
-
-      if (j.status === "error") {
-        updateLiveProgress(0, 0, "idle");
-        void safeIdleMap();
-        window.alert(j.error || "Scraping gagal");
-        return;
-      }
-      if (j.status === "done" && Array.isArray(j.stores)) {
-        const tgt = pr && pr.target > 0 ? pr.target : j.stores.length;
-        updateLiveProgress(j.stores.length, tgt, "done");
-        setResultsTable(j.stores);
-        try {
-          const m = await getMapMod();
-          m.plotStoresOnMap(j.stores, j.mapCenter ?? null);
-          m.invalidateMapSize();
-        } catch (e) {
-          console.warn("Peta hasil:", e);
-        }
-        setLog((j.logs || []).join("\n") + "\n\nSelesai.");
-        return;
-      }
-      updateLiveProgress(0, 0, "idle");
-      void safeIdleMap();
-      setResultsTable([]);
-    };
-
-    pollTimer = setInterval(() => void tick(), 1200);
-    await tick();
-  }
-
-  document.getElementById("start-scrape-btn")?.addEventListener("click", () => {
-    void startScrapeFromUI();
-  });
-
-  setResultsTable([]);
-  updateLiveProgress(0, 0, "idle");
-  wireExports();
-  wireRadius();
-  void (async () => {
-    try {
-      const m = await getMapMod();
-      m.ensureMap();
-      m.showIdlePreviewMap();
-    } catch (e) {
-      console.error("Peta preview gagal dimuat:", e);
-    }
-  })();
+  runBackendHealthCheck();
+  initScrapMapsDashboard();
 </script>

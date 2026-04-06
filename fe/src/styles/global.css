@@ -70,6 +70,10 @@
 	.dashboard-root .animate-progress {
 		animation: dashboard-progress 3s infinite alternate ease-in-out;
 	}
+
+	.dashboard-root .glow-blue {
+		box-shadow: 0 0 15px rgba(0, 102, 204, 0.3);
+	}
 }
 
 @keyframes dashboard-progress {

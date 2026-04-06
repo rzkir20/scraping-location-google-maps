@@ -1,0 +1,104 @@
+---
+/**
+ * Tombol dashboard — variant untuk pola umum; tambahkan `class` untuk lebar/spasi.
+ */
+interface Props {
+  variant?:
+    | "primary"
+    | "primaryAction"
+    | "outline"
+    | "ghost"
+    | "ghostHeart"
+    | "ghostNotify"
+    | "soft"
+    | "toggleOn"
+    | "toggleOff"
+    | "mapTool"
+    | "iconSq"
+    | "pagination"
+    | "paginationActive"
+    | "downloadPrimary"
+    | "downloadMuted"
+    | "settingsBar"
+    | "dangerBar"
+    | "textLink"
+    | "textLinkAccent";
+  id?: string;
+  type?: "button" | "submit" | "reset";
+  disabled?: boolean;
+  class?: string;
+  ariaLabel?: string;
+  ariaExpanded?: boolean;
+  ariaControls?: string;
+  ariaHaspopup?: boolean;
+}
+
+const {
+  variant = "primary",
+  id,
+  type = "button",
+  disabled,
+  class: className = "",
+  ariaLabel,
+  ariaExpanded,
+  ariaControls,
+  ariaHaspopup,
+} = Astro.props;
+
+const variants: Record<NonNullable<Props["variant"]>, string> = {
+  primary:
+    "inline-flex items-center justify-center gap-2 w-full py-3 rounded-xl font-semibold text-white bg-[#0066cc] hover:bg-[#0052a3] transition-all shadow-[0_0_15px_rgba(0,102,204,0.3)]",
+  primaryAction:
+    "inline-flex items-center justify-center gap-2 px-8 py-3 rounded-xl font-bold text-white bg-[#0066cc] hover:bg-[#0052a3] transition-all shadow-lg glow-blue",
+  outline:
+    "inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded text-xs font-semibold border border-[#2d2d2d] bg-[#1f1f1f] text-gray-200 hover:border-[#0066cc] transition-all",
+  ghost:
+    "inline-flex items-center justify-center p-2 text-gray-400 hover:text-white transition-colors",
+  ghostHeart:
+    "inline-flex items-center justify-center p-2 text-gray-400 hover:text-[#0066cc] transition-colors",
+  ghostNotify:
+    "relative inline-flex items-center justify-center p-2 text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-[#1f1f1f]",
+  soft:
+    "inline-flex items-center gap-2 px-2 sm:px-3 py-1.5 rounded-lg text-[10px] sm:text-xs font-bold border border-[#0066cc]/30 bg-[#0066cc]/10 text-[#0066cc] hover:bg-[#0066cc] hover:text-white transition-all",
+  toggleOn:
+    "inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-bold transition-all bg-[#0066cc] text-white",
+  toggleOff:
+    "inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-bold transition-all text-gray-500 hover:text-white bg-transparent",
+  mapTool:
+    "inline-flex items-center justify-center w-10 h-10 bg-[#161616]/95 border border-[#2d2d2d] rounded-lg text-gray-400 hover:text-white hover:bg-[#1f1f1f] transition-all",
+  iconSq:
+    "inline-flex items-center justify-center p-1.5 rounded-md border border-[#2d2d2d] bg-[#1f1f1f] text-gray-400 hover:text-white",
+  pagination:
+    "inline-flex items-center justify-center w-8 h-8 rounded border border-[#2d2d2d] hover:bg-[#1f1f1f] text-gray-400",
+  paginationActive:
+    "inline-flex items-center justify-center w-8 h-8 rounded border border-[#0066cc] bg-[#0066cc]/10 text-white",
+  downloadPrimary:
+    "download-platform-btn w-full inline-flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-white bg-[#0066cc] hover:bg-[#0052a3] transition-all",
+  downloadMuted:
+    "download-platform-btn w-full inline-flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-white bg-[#2d2d2d] hover:bg-[#333] transition-all",
+  settingsBar:
+    "inline-flex items-center gap-2 px-4 py-2 rounded-lg text-[10px] font-bold border border-[#2d2d2d] bg-[#1f1f1f] text-white hover:bg-[#252525] transition-all",
+  dangerBar:
+    "inline-flex items-center gap-2 px-4 py-2 rounded-lg text-[10px] font-bold border border-[#2d2d2d] bg-[#1f1f1f] text-red-500 hover:bg-red-500/10 transition-all",
+  textLink:
+    "inline-flex items-center px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-gray-500 hover:text-white transition-all text-left sm:text-right",
+  textLinkAccent:
+    "border-0 bg-transparent p-0 cursor-pointer text-[10px] font-bold uppercase text-[#0066cc] hover:text-white transition-colors",
+};
+
+const base = variants[variant] ?? variants.primary;
+const merged = [base, className].filter(Boolean).join(" ");
+---
+
+<button
+  id={id}
+  type={type}
+  class={merged}
+  disabled={disabled}
+  aria-label={ariaLabel}
+  aria-expanded={ariaExpanded}
+  aria-controls={ariaControls}
+  aria-haspopup={ariaHaspopup}
+>
+  <slot />
+</button>

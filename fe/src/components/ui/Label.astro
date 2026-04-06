@@ -1,0 +1,88 @@
+---
+/**
+ * Teks label / judul grup dashboard. `field` merender <label for="…">.
+ */
+interface Props {
+  variant?:
+    | "section"
+    | "field"
+    | "subsection"
+    | "cardTitle"
+    | "bar"
+    | "caption"
+    | "legend"
+    | "muted";
+  for?: string;
+  id?: string;
+  /** Paksa tag (default mengikuti variant) */
+  as?: "label" | "p" | "span" | "h2" | "h3" | "h4";
+  class?: string;
+}
+
+const {
+  variant = "section",
+  for: htmlFor,
+  id,
+  as,
+  class: className = "",
+} = Astro.props;
+
+const styles: Record<NonNullable<Props["variant"]>, string> = {
+  section:
+    "block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3",
+  field:
+    "block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2",
+  subsection: "text-sm font-bold text-white uppercase tracking-wider",
+  cardTitle: "text-[10px] font-bold text-gray-500 uppercase tracking-widest",
+  bar: "text-xs font-bold text-gray-500 uppercase tracking-widest mb-4 flex items-center gap-2",
+  caption: "text-[10px] text-gray-500 uppercase tracking-widest font-bold mb-2",
+  legend: "text-[9px] text-gray-500 uppercase tracking-widest font-bold mb-1",
+  muted: "text-xs text-gray-500",
+};
+
+const base = styles[variant] ?? styles.section;
+const merged = [base, className].filter(Boolean).join(" ");
+
+const tag =
+  as ??
+  (variant === "field"
+    ? "label"
+    : variant === "subsection"
+      ? "h3"
+      : variant === "cardTitle" || variant === "bar"
+        ? "h4"
+        : "p");
+---
+
+{
+  tag === "label" && (
+    <label id={id} class={merged} for={htmlFor}>
+      <slot />
+    </label>
+  )
+}
+{tag === "p" && (
+  <p id={id} class={merged}>
+    <slot />
+  </p>
+)}
+{tag === "span" && (
+  <span id={id} class={merged}>
+    <slot />
+  </span>
+)}
+{tag === "h2" && (
+  <h2 id={id} class={merged}>
+    <slot />
+  </h2>
+)}
+{tag === "h3" && (
+  <h3 id={id} class={merged}>
+    <slot />
+  </h3>
+)}
+{tag === "h4" && (
+  <h4 id={id} class={merged}>
+    <slot />
+  </h4>
+)}
