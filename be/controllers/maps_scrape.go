@@ -156,9 +156,11 @@ func (g *GoogleMapsScraper) ScrapeCoffeeShops(url string, maxResults int) ([]typ
 				consecutiveDeadlineErrors = 0
 				if store.HasWebsite {
 					summary.WithWebsite++
+					continue
 				}
 				if strings.TrimSpace(store.Phone) == "" {
 					summary.NoPhone++
+					continue
 				}
 				stores = append(stores, *store)
 				g.reportProgress(len(stores), maxResults)
