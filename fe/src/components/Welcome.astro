@@ -1,11 +1,15 @@
 ---
 import Dialog from "./ui/Dialog.astro";
+
 import Input from "./ui/Input.astro";
+
 import Button from "./ui/Button.astro";
+
 import Label from "./ui/Label.astro";
 
-const apiBase =
-  "https://scraping-location-google-maps-production.up.railway.app";
+import { scrapMapsApiBase } from "../lib/config";
+
+const apiBase = scrapMapsApiBase;
 ---
 
 <div class="flex h-screen w-full overflow-hidden bg-[#0f0f0f]">
@@ -59,88 +63,6 @@ const apiBase =
             <strong class="text-gray-400">Live tracking</strong> + log.
           </p>
         </div>
-      </section>
-      <section>
-        <Label variant="section">Filters & Parameters</Label>
-        <div class="space-y-4">
-          <div>
-            <div class="flex justify-between text-xs mb-2">
-              <span>Radius</span>
-              <span class="text-[#0066cc] font-medium"
-                ><span id="radius-label">15</span> km</span
-              >
-            </div>
-            <Input
-              variant="range"
-              id="input-radius"
-              min={1}
-              max={50}
-              value={15}
-            />
-          </div>
-          <div>
-            <Input
-              variant="select"
-              selectClass="w-full bg-[#1f1f1f] border border-[#2d2d2d] rounded-lg py-2 px-3 text-sm focus:outline-none focus:border-[#0066cc] text-gray-200"
-            >
-              <option>All Categories</option>
-              <option>Restaurants</option>
-              <option>Real Estate</option>
-              <option>Legal Services</option>
-              <option>Dental Clinics</option>
-            </Input>
-          </div>
-          <div class="flex gap-2 text-sm">
-            <div
-              class="flex-1 bg-[#1f1f1f] border border-[#2d2d2d] rounded-lg p-2 text-center cursor-pointer hover:border-[#0066cc] transition-colors"
-            >
-              <span class="block text-[10px] text-gray-500 uppercase"
-                >Min Rating</span
-              >
-              <span>4.0+</span>
-            </div>
-            <div
-              class="flex-1 bg-[#1f1f1f] border border-[#2d2d2d] rounded-lg p-2 text-center cursor-pointer hover:border-[#0066cc] transition-colors"
-            >
-              <span class="block text-[10px] text-gray-500 uppercase"
-                >Reviews</span
-              >
-              <span>50+</span>
-            </div>
-          </div>
-        </div>
-      </section>
-      <section>
-        <Label variant="section">Bulk Operations</Label>
-        <div
-          class="border-2 border-dashed border-[#2d2d2d] rounded-xl p-4 text-center hover:border-[#0066cc] transition-colors group cursor-pointer"
-        >
-          <iconify-icon
-            icon="lucide:upload-cloud"
-            class="text-2xl text-gray-500 group-hover:text-[#0066cc] transition-colors mb-2"
-          ></iconify-icon>
-          <p class="text-xs text-gray-400">Drop CSV for bulk search</p>
-        </div>
-      </section>
-      <section>
-        <details class="group">
-          <summary
-            class="list-none flex justify-between items-center cursor-pointer text-xs font-semibold text-gray-500 uppercase tracking-wider"
-          >
-            Advanced Settings
-            <iconify-icon
-              icon="lucide:chevron-down"
-              class="group-open:rotate-180 transition-transform"></iconify-icon>
-          </summary>
-          <div class="pt-4 space-y-3">
-            <Input variant="checkbox" checked={true}>
-              <span class="text-sm text-gray-400">Skip existing records</span>
-            </Input>
-            <Input variant="checkbox">
-              <span class="text-sm text-gray-400">Scrape email addresses</span>
-            </Input>
-          </div>
-        </details>
       </section>
     </div>
     <div class="p-6 border-t border-[#2d2d2d]">
@@ -392,6 +314,28 @@ const apiBase =
                 style="width: 0%"
               >
               </div>
+            </div>
+          </div>
+          <div
+            class="bg-[#161616]/95 backdrop-blur-md border border-[#2d2d2d] p-3 rounded-xl"
+          >
+            <Label variant="caption">Current Card</Label>
+            <div class="mt-2 space-y-1">
+              <p id="live-card-name" class="text-xs font-semibold text-white truncate">
+                Menunggu kartu...
+              </p>
+              <p class="text-[10px] text-gray-500">
+                Rating: <span id="live-card-rating">-</span>
+              </p>
+              <p id="live-card-category" class="text-[10px] text-gray-500">-</p>
+              <p id="live-card-address" class="text-[10px] text-gray-400 leading-relaxed">
+                -
+              </p>
+              <p class="text-[10px] text-gray-500">
+                <span id="live-card-opening">-</span>
+                <span class="text-gray-600"> • </span>
+                <span id="live-card-phone">-</span>
+              </p>
             </div>
           </div>
           <div
@@ -1189,11 +1133,12 @@ const apiBase =
 
 <!-- Tanpa define:vars: Astro membungkusnya dalam IIFE dan `import` jadi invalid → skrip tidak jalan. -->
 <script>
+  import { scrapMapsApiBase } from "../lib/config";
   import {
     initScrapMapsDashboard,
     runBackendHealthCheck,
   } from "../services/scrapmaps.service";
 
-  runBackendHealthCheck();
-  initScrapMapsDashboard();
+  runBackendHealthCheck(scrapMapsApiBase);
+  initScrapMapsDashboard(scrapMapsApiBase);
 </script>

@@ -42,6 +42,7 @@ func RunScrapeJob(keyword, locationName string, maxResults int, logf func(string
 	}
 	scraper.ProgressLog = logf
 	scraper.OnProgress = opts.OnProgress
+	scraper.OnCurrentCard = opts.OnCurrentCard
 	defer scraper.Close()
 
 	if err := scraper.Init(); err != nil {

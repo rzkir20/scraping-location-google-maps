@@ -77,15 +77,20 @@ func corsAllowOrigin(origin string) bool {
 	if origin == "" {
 		return false
 	}
+	// Selalu izinkan origin lokal untuk kebutuhan development lintas port.
+	if isLocalDevOrigin(origin) {
+		return true
+	}
 	if raw := strings.TrimSpace(os.Getenv("CORS_ALLOW_ORIGINS")); raw != "" {
 		for _, p := range strings.Split(raw, ",") {
-			if strings.TrimSpace(p) == origin {
+			v := strings.TrimSpace(p)
+			if v == "*" || v == origin {
 				return true
 			}
 		}
 		return false
 	}
-	return isLocalDevOrigin(origin)
+	return false
 }
 
 func isLocalDevOrigin(o string) bool {

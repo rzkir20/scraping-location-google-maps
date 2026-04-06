@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"context"
+	"location/types"
 	"sync"
 )
 
@@ -10,6 +11,7 @@ type GoogleMapsScraper struct {
 	ctx            context.Context
 	cancel         context.CancelFunc
 	lastSearchURL  string
+	lastCardName   string
 	processedNames map[string]bool
 	processedIDs   map[string]bool
 	mu             sync.Mutex
@@ -17,6 +19,8 @@ type GoogleMapsScraper struct {
 	ProgressLog func(string)
 	// OnProgress dipanggil saat jumlah listing tersimpan berubah (untuk API / dashboard).
 	OnProgress func(savedCount, targetMax int)
+	// OnCurrentCard dipanggil ketika detail kartu aktif berhasil dibaca.
+	OnCurrentCard func(card types.LiveCard)
 }
 
 // ScrapeSummary statistik satu sesi ScrapeCoffeeShops.

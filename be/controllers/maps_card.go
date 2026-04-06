@@ -34,6 +34,10 @@ func (g *GoogleMapsScraper) getCardCount(ctx context.Context) int {
 }
 
 func (g *GoogleMapsScraper) processCard(index int, ctx context.Context) (*types.StoreInfo, error) {
+	g.mu.Lock()
+	prevCardName := strings.TrimSpace(g.lastCardName)
+	g.mu.Unlock()
+
 	clickJS := fmt.Sprintf(jsPlaceCardsFn+`
 		(function(){
 			var cards = __gmapsPlaceCards();
@@ -55,7 +59,7 @@ func (g *GoogleMapsScraper) processCard(index int, ctx context.Context) (*types.
 	panelCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	err := chromedp.Run(panelCtx,
 		chromedp.Poll(
-			`(function(){
+			fmt.Sprintf(`(function(){
 				var h = document.querySelector('h1.DUwDvf') ||
 					document.querySelector('[role="main"] h1.DUwDvf') ||
 					document.querySelector('h1[class*="DUwDvf"]');
@@ -63,8 +67,10 @@ func (g *GoogleMapsScraper) processCard(index int, ctx context.Context) (*types.
 				var tx = (h.textContent || '').trim();
 				if (!tx) return false;
 				if (/^bersponsor$/i.test(tx) || /^results$/i.test(tx) || /^hasil$/i.test(tx)) return false;
+				var prev = %q;
+				if (prev && tx.toLowerCase() === String(prev).toLowerCase()) return false;
 				return true;
-			})()`,
+			})()`, prevCardName),
 			nil,
 			chromedp.WithPollingTimeout(9*time.Second),
 			chromedp.WithPollingInterval(120*time.Millisecond),
@@ -144,7 +150,51 @@ func (g *GoogleMapsScraper) processCard(index int, ctx context.Context) (*types.
 					if (al) address = al.replace(/^[^:]+:\s*/i, '').trim();
 				}
 			}
-			return JSON.stringify({ name: name, phone: phone, hasWebsite: hasWebsite, address: address });
+			var category = '';
+			var catSel = [
+				'button[jsaction*="pane.rating.category"]',
+				'button[jsaction*="pane.placeActions.category"]',
+				'[role="main"] button[aria-label*="Kategori" i]',
+				'[role="main"] button[aria-label*="Category" i]'
+			];
+			for (var ci2 = 0; ci2 < catSel.length; ci2++) {
+				var catEl = document.querySelector(catSel[ci2]);
+				if (!catEl) continue;
+				var catTx = (catEl.textContent || '').trim();
+				if (catTx) { category = catTx; break; }
+			}
+			if (!category) {
+				var catFallback = document.querySelector('[role="main"] .DkEaL') || document.querySelector('[role="main"] .RWPxGd');
+				if (catFallback) category = (catFallback.textContent || '').trim();
+			}
+			var openingStatus = '';
+			var openNodes = document.querySelectorAll('[role="main"] span, [role="main"] div');
+			for (var oi = 0; oi < openNodes.length; oi++) {
+				var ot = (openNodes[oi].textContent || '').trim();
+				if (!ot) continue;
+				if (/^(buka|tutup|open|closed)\\b/i.test(ot)) {
+					openingStatus = ot;
+					break;
+				}
+			}
+			var rating = '';
+			var ratingBtn = document.querySelector('button[jsaction*="pane.rating.moreReviews"]');
+			if (ratingBtn) {
+				var al = (ratingBtn.getAttribute('aria-label') || '').trim();
+				var m = al.match(/([0-9]+(?:[.,][0-9]+)?)/);
+				if (m) rating = m[1].replace(',', '.');
+			}
+			if (!rating) {
+				var ratingNodes = document.querySelectorAll('[role="main"] span, [role="main"] div');
+				for (var ri = 0; ri < ratingNodes.length; ri++) {
+					var rt = (ratingNodes[ri].textContent || '').trim();
+					if (!rt) continue;
+					if (!/(\\u2605|star|bintang)/i.test(rt) && !/[0-9][.,][0-9]/.test(rt)) continue;
+					var rm = rt.match(/([0-9]+(?:[.,][0-9]+)?)/);
+					if (rm) { rating = rm[1].replace(',', '.'); break; }
+				}
+			}
+			return JSON.stringify({ name: name, phone: phone, hasWebsite: hasWebsite, address: address, category: category, openingStatus: openingStatus, rating: rating });
 		})()
 	`
 	var raw []byte
@@ -156,6 +206,9 @@ func (g *GoogleMapsScraper) processCard(index int, ctx context.Context) (*types.
 		Name       string `json:"name"`
 		Phone      string `json:"phone"`
 		Address    string `json:"address"`
+		Rating     string `json:"rating"`
+		Category   string `json:"category"`
+		Open       string `json:"openingStatus"`
 		HasWebsite bool   `json:"hasWebsite"`
 	}
 	if len(raw) > 0 {
@@ -174,6 +227,17 @@ func (g *GoogleMapsScraper) processCard(index int, ctx context.Context) (*types.
 		return nil, nil
 	}
 	g.mu.Lock()
+	g.lastCardName = name
+	g.mu.Unlock()
+	g.reportCurrentCard(types.LiveCard{
+		Name:          name,
+		Rating:        strings.TrimSpace(data.Rating),
+		Category:      strings.TrimSpace(data.Category),
+		Address:       strings.TrimSpace(data.Address),
+		Phone:         strings.TrimSpace(data.Phone),
+		OpeningStatus: strings.TrimSpace(data.Open),
+	})
+	g.mu.Lock()
 	if g.processedNames[name] {
 		g.mu.Unlock()
 		return nil, nil
@@ -183,6 +247,7 @@ func (g *GoogleMapsScraper) processCard(index int, ctx context.Context) (*types.
 
 	return &types.StoreInfo{
 		Name:       name,
+		Rating:     strings.TrimSpace(data.Rating),
 		Phone:      strings.TrimSpace(data.Phone),
 		Address:    strings.TrimSpace(data.Address),
 		HasWebsite: data.HasWebsite,

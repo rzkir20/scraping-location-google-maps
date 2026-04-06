@@ -3,6 +3,7 @@ package controllers
 import (
 	"fmt"
 	"log"
+	"location/types"
 	"strings"
 )
 
@@ -35,4 +36,10 @@ func (g *GoogleMapsScraper) progressf(format string, args ...interface{}) {
 		return
 	}
 	log.Println(s)
+}
+
+func (g *GoogleMapsScraper) reportCurrentCard(card types.LiveCard) {
+	if g != nil && g.OnCurrentCard != nil {
+		g.OnCurrentCard(card)
+	}
 }

@@ -1,4 +1,6 @@
 import { closeModal, openModal } from "../lib/dashboardDialog";
+import { scrapMapsApiBase } from "../lib/config";
+
 import type { MapCenter } from "../lib/dashboardMap";
 
 type NotificationKind = "info" | "success" | "error";
@@ -22,8 +24,18 @@ interface SessionRow {
 
 interface ScrapeStoreRow {
   name?: string;
+  rating?: string;
   address?: string;
   phone?: string;
+}
+
+interface LiveCardRow {
+  name?: string;
+  rating?: string;
+  category?: string;
+  address?: string;
+  phone?: string;
+  openingStatus?: string;
 }
 
 interface ScrapeStatusJson {
@@ -33,12 +45,8 @@ interface ScrapeStatusJson {
   stores?: ScrapeStoreRow[];
   mapCenter?: MapCenter | null;
   progress?: { saved?: number; target?: number };
+  currentCard?: LiveCardRow;
 }
-
-const API_BASE =
-  "https://scraping-location-google-maps-production.up.railway.app";
-
-export const scrapMapsApiBase = API_BASE;
 
 /** Cek /api/health tanpa impor Leaflet (chunk peta tetap terpisah dari pemanggil yang ringan). */
 export function runBackendHealthCheck(
@@ -223,6 +231,7 @@ function setResultsTable(stores: ScrapeStoreRow[]) {
   tbody.innerHTML = "";
   stores.forEach((s, i) => {
     const name = (s.name || "").trim() || "—";
+    const rating = (s.rating || "").trim() || "—";
     const addr = (s.address || "").trim() || "—";
     const phone = (s.phone || "").trim() || "—";
     const sub = addr.length > 48 ? addr.slice(0, 48) + "…" : addr;
@@ -234,13 +243,14 @@ function setResultsTable(stores: ScrapeStoreRow[]) {
     tr.dataset.sub = sub;
     tr.dataset.address = addr;
     tr.dataset.phone = phone;
+    tr.dataset.rating = rating;
     tr.innerHTML = `
 				<td class="px-4 py-3 text-sm">
 					<span class="font-medium block">${escapeHtml(name)}</span>
 					<span class="text-xs text-gray-500">${escapeHtml(sub)}</span>
 				</td>
 				<td class="px-4 py-3">
-					<span class="text-sm font-mono text-gray-600">—</span>
+					<span class="text-sm font-mono text-gray-200">${escapeHtml(rating)}</span>
 				</td>
 				<td class="px-4 py-3 text-xs text-gray-400 font-mono">${escapeHtml(phone)}</td>
 				<td class="px-4 py-3 text-right">
@@ -250,6 +260,63 @@ function setResultsTable(stores: ScrapeStoreRow[]) {
 				</td>`;
     tbody.appendChild(tr);
   });
+}
+
+function setResultsLoading(keyword: string, location: string, target: number) {
+  const tbody = document.getElementById("results-tbody");
+  const heading = document.getElementById("results-heading");
+  const pag = document.getElementById("results-pagination-text");
+  if (!tbody) return;
+
+  if (heading) heading.textContent = "Results (loading...)";
+  if (pag) {
+    pag.textContent =
+      target > 0
+        ? `Sedang mengambil data “${keyword}” di ${location} · target ${target}`
+        : `Sedang mengambil data “${keyword}” di ${location}`;
+  }
+
+  tbody.innerHTML = `
+    <tr>
+      <td colspan="4" class="px-4 py-6">
+        <div class="rounded-xl border border-[#2d2d2d] bg-[#1f1f1f] p-4">
+          <div class="flex items-center gap-2 text-sm text-gray-300">
+            <span class="inline-block w-2 h-2 rounded-full bg-[#0066cc] animate-pulse"></span>
+            <span>Mengambil listing dari backend...</span>
+          </div>
+          <div class="mt-3 space-y-2">
+            <div class="h-2 rounded bg-[#2d2d2d] animate-pulse"></div>
+            <div class="h-2 rounded bg-[#2d2d2d] animate-pulse w-[85%]"></div>
+            <div class="h-2 rounded bg-[#2d2d2d] animate-pulse w-[70%]"></div>
+          </div>
+        </div>
+      </td>
+    </tr>`;
+}
+
+function renderLiveCard(card?: LiveCardRow | null) {
+  const nameEl = document.getElementById("live-card-name");
+  const ratingEl = document.getElementById("live-card-rating");
+  const categoryEl = document.getElementById("live-card-category");
+  const addressEl = document.getElementById("live-card-address");
+  const openingEl = document.getElementById("live-card-opening");
+  const phoneEl = document.getElementById("live-card-phone");
+  if (!nameEl || !ratingEl || !categoryEl || !addressEl || !openingEl || !phoneEl)
+    return;
+
+  const name = (card?.name || "").trim();
+  const rating = (card?.rating || "").trim();
+  const category = (card?.category || "").trim();
+  const address = (card?.address || "").trim();
+  const opening = (card?.openingStatus || "").trim();
+  const phone = (card?.phone || "").trim();
+
+  nameEl.textContent = name || "Menunggu kartu...";
+  ratingEl.textContent = rating || "-";
+  categoryEl.textContent = category || "-";
+  addressEl.textContent = address || "-";
+  openingEl.textContent = opening || "-";
+  phoneEl.textContent = phone || "-";
 }
 
 function escapeHtml(s: string) {
@@ -590,14 +657,6 @@ function wireExports() {
   });
 }
 
-function wireRadius() {
-  const r = document.getElementById("input-radius") as HTMLInputElement | null;
-  const label = document.getElementById("radius-label");
-  r?.addEventListener("input", () => {
-    if (label) label.textContent = r.value;
-  });
-}
-
 function wireModalsAndSettings() {
   /** Capture + composedPath: klik pada `<iconify-icon>` (shadow DOM) tetap terdeteksi. */
   document.addEventListener(
@@ -769,6 +828,8 @@ function createStartScrapeHandler(apiBase: string) {
     setLog("Mengirim permintaan ke backend…");
     updateLiveProgress(0, maxResults, "running");
     setScrapeBusy(true);
+    setResultsLoading(kw, loc, maxResults);
+    renderLiveCard(null);
 
     let res: Response;
     try {
@@ -786,7 +847,7 @@ function createStartScrapeHandler(apiBase: string) {
       );
       appendDashboardNotification(
         "Backend tidak terjangkau",
-        "Tidak bisa menghubungi API. Pastikan server jalan dan PUBLIC_API_URL benar.",
+        "Tidak bisa menghubungi API. Pastikan server jalan dan env PUBLIC_API_URL benar.",
         "error",
       );
       window.alert(
@@ -903,6 +964,14 @@ function createStartScrapeHandler(apiBase: string) {
         return;
       }
       if (Array.isArray(j.logs)) setLog(j.logs.join("\n"));
+      if (j.status === "running") {
+        const card =
+          j.currentCard && typeof j.currentCard === "object"
+            ? j.currentCard
+            : null;
+        // Jangan kosongkan panel saat backend belum kirim currentCard baru.
+        if (card) renderLiveCard(card);
+      }
 
       const pr = j.progress;
       if (pr && typeof pr === "object" && j.status === "running") {
@@ -916,6 +985,7 @@ function createStartScrapeHandler(apiBase: string) {
 
       if (j.status === "error") {
         updateLiveProgress(0, 0, "idle");
+        renderLiveCard(null);
         void safeIdleMap();
         appendDashboardNotification(
           "Scraping gagal",
@@ -932,6 +1002,7 @@ function createStartScrapeHandler(apiBase: string) {
             ? pr.target
             : stores.length;
         updateLiveProgress(stores.length, tgt, "done");
+        renderLiveCard(j.currentCard ?? null);
         setResultsTable(stores);
         try {
           const m = await getMapMod();
@@ -958,6 +1029,7 @@ function createStartScrapeHandler(apiBase: string) {
         return;
       }
       updateLiveProgress(0, 0, "idle");
+      renderLiveCard(null);
       void safeIdleMap();
       setResultsTable([]);
       appendDashboardNotification(
@@ -988,13 +1060,13 @@ export function initScrapMapsDashboard(
 
   setResultsTable([]);
   updateLiveProgress(0, 0, "idle");
+  renderLiveCard(null);
   loadSoundIntoUI();
   renderSessionsTable();
   renderNotificationList();
   wireNotifications();
   wireModalsAndSettings();
   wireExports();
-  wireRadius();
   void (async () => {
     try {
       const m = await getMapMod();

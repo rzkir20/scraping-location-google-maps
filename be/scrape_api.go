@@ -26,6 +26,7 @@ var scrapeRunner struct {
 	targetMax  int
 	mapLat     string
 	mapLng     string
+	currentCard types.LiveCard
 }
 
 func newJobID() string {
@@ -95,6 +96,7 @@ func handleAPIScrape(w http.ResponseWriter, r *http.Request) {
 	scrapeRunner.location = location
 	scrapeRunner.savedCount = 0
 	scrapeRunner.targetMax = maxResults
+	scrapeRunner.currentCard = types.LiveCard{}
 	if geoErr == nil {
 		scrapeRunner.mapLat, scrapeRunner.mapLng = latStr, lngStr
 	} else {
@@ -125,9 +127,15 @@ func runScrapeJobHTTP(keyword, location string, maxResults int) {
 		}
 		scrapeRunner.mu.Unlock()
 	}
+	onCurrentCard := func(card types.LiveCard) {
+		scrapeRunner.mu.Lock()
+		scrapeRunner.currentCard = card
+		scrapeRunner.mu.Unlock()
+	}
 	stores, err := RunScrapeJob(keyword, location, maxResults, logf, false, ScrapeJobOptions{
-		Headless:   true,
-		OnProgress: onProgress,
+		Headless:      true,
+		OnProgress:    onProgress,
+		OnCurrentCard: onCurrentCard,
 	})
 
 	scrapeRunner.mu.Lock()
@@ -168,6 +176,7 @@ func handleScrapeStatus(w http.ResponseWriter, r *http.Request) {
 	target := scrapeRunner.targetMax
 	mapLat := scrapeRunner.mapLat
 	mapLng := scrapeRunner.mapLng
+	currentCard := scrapeRunner.currentCard
 	scrapeRunner.mu.Unlock()
 
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
@@ -181,6 +190,9 @@ func handleScrapeStatus(w http.ResponseWriter, r *http.Request) {
 	}
 	if mapLat != "" && mapLng != "" {
 		resp["mapCenter"] = map[string]string{"lat": mapLat, "lng": mapLng}
+	}
+	if currentCard.Name != "" {
+		resp["currentCard"] = currentCard
 	}
 	if status == "done" {
 		resp["stores"] = storesCopy
