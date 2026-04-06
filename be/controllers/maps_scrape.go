@@ -70,17 +70,7 @@ func (g *GoogleMapsScraper) ScrapeCoffeeShops(url string, maxResults int) ([]typ
 
 	g.progressLine("⏳ Waiting for search results to load...")
 	err = chromedp.Run(scrapeCtx,
-		chromedp.Poll(
-			`(function(){
-				var feed = document.querySelector('div[role="feed"]');
-				if (feed && feed.querySelector('a[href*="/maps/place/"]')) return true;
-				if (document.querySelectorAll('a[href*="/maps/place/"]').length > 0) return true;
-				return false;
-			})()`,
-			nil,
-			chromedp.WithPollingTimeout(45*time.Second),
-			chromedp.WithPollingInterval(300*time.Millisecond),
-		),
+		resultLinksPoll(45*time.Second),
 	)
 	if err != nil {
 		g.progressf("⚠️  Timeout waiting for result links: %v (lanjut mencoba...)", err)
@@ -105,7 +95,7 @@ func (g *GoogleMapsScraper) ScrapeCoffeeShops(url string, maxResults int) ([]typ
 				url: window.location.href,
 				title: document.title,
 				hasSidebar: !!document.querySelector('[role="main"]'),
-				hasResults: document.querySelectorAll('div[data-result-index]').length > 0
+				hasResults: document.querySelectorAll('a[href*="/maps/place/"]').length > 0
 			})
 		`, &pageInfo),
 	)
