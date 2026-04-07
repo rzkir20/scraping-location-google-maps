@@ -6,27 +6,75 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"os"
+	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"location/types"
 )
 
-// scrapeRunner menyimpan satu job aktif (satu scraping pada satu waktu).
-var scrapeRunner struct {
-	mu         sync.Mutex
-	jobID      string
-	status     string // idle | running | done | error
-	logs       []string
-	stores     []types.StoreInfo
-	errMsg     string
-	keyword    string
-	location   string
-	savedCount int
-	targetMax  int
-	mapLat     string
-	mapLng     string
+// scrapeJobState: satu entri per jobId (boleh banyak job paralel).
+type scrapeJobState struct {
+	status      string // idle | running | done | error
+	logs        []string
+	stores      []types.StoreInfo
+	errMsg      string
+	keyword     string
+	location    string
+	savedCount  int
+	targetMax   int
+	mapLat      string
+	mapLng      string
 	currentCard types.LiveCard
+	finishedAt  time.Time
+}
+
+var (
+	jobsMu sync.Mutex
+	jobs   = make(map[string]*scrapeJobState)
+
+	// scrapeSlots membatasi jumlah Chrome paralel (0 = tanpa batas, dari env MAX_CONCURRENT_SCRAPES).
+	scrapeSlots chan struct{}
+)
+
+func init() {
+	n := maxConcurrentScrapesFromEnv()
+	if n > 0 {
+		scrapeSlots = make(chan struct{}, n)
+	}
+}
+
+func maxConcurrentScrapesFromEnv() int {
+	s := strings.TrimSpace(os.Getenv("MAX_CONCURRENT_SCRAPES"))
+	if s == "" {
+		return 12
+	}
+	n, err := strconv.Atoi(s)
+	if err != nil || n < 0 {
+		return 12
+	}
+	return n
+}
+
+func tryAcquireScrapeSlot() bool {
+	if scrapeSlots == nil {
+		return true
+	}
+	select {
+	case scrapeSlots <- struct{}{}:
+		return true
+	default:
+		return false
+	}
+}
+
+func releaseScrapeSlot() {
+	if scrapeSlots == nil {
+		return
+	}
+	<-scrapeSlots
 }
 
 func newJobID() string {
@@ -35,13 +83,30 @@ func newJobID() string {
 	return hex.EncodeToString(b)
 }
 
-func appendScrapeLog(line string) {
-	scrapeRunner.mu.Lock()
-	defer scrapeRunner.mu.Unlock()
-	scrapeRunner.logs = append(scrapeRunner.logs, line)
+// pruneFinishedJobs menghapus job selesai/error yang sudah lama (hindari map membengkak).
+func pruneFinishedJobs() {
+	const maxAge = 45 * time.Minute
+	now := time.Now()
+	for id, j := range jobs {
+		if j == nil {
+			delete(jobs, id)
+			continue
+		}
+		if j.status != "running" && !j.finishedAt.IsZero() && now.Sub(j.finishedAt) > maxAge {
+			delete(jobs, id)
+		}
+	}
 }
 
-// handleAPIScrape: POST /api/scrape — mulai job (202 + jobId). 409 jika masih running.
+func appendJobLog(jobID, line string) {
+	jobsMu.Lock()
+	defer jobsMu.Unlock()
+	if j := jobs[jobID]; j != nil {
+		j.logs = append(j.logs, line)
+	}
+}
+
+// handleAPIScrape: POST /api/scrape — mulai job (202 + jobId). Banyak job boleh paralel.
 func handleAPIScrape(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodOptions {
 		return
@@ -80,31 +145,30 @@ func handleAPIScrape(w http.ResponseWriter, r *http.Request) {
 
 	latStr, lngStr, geoErr := geocodeLocation(location)
 
-	scrapeRunner.mu.Lock()
-	if scrapeRunner.status == "running" {
-		scrapeRunner.mu.Unlock()
-		writeJSON(w, http.StatusConflict, map[string]string{"error": "scraping masih berjalan, tunggu selesai"})
+	if !tryAcquireScrapeSlot() {
+		writeJSON(w, http.StatusServiceUnavailable, map[string]string{
+			"error": "server penuh: terlalu banyak scraping paralel. Coba lagi sebentar atau naikkan MAX_CONCURRENT_SCRAPES.",
+		})
 		return
 	}
-	jobID := newJobID()
-	scrapeRunner.jobID = jobID
-	scrapeRunner.status = "running"
-	scrapeRunner.logs = nil
-	scrapeRunner.stores = nil
-	scrapeRunner.errMsg = ""
-	scrapeRunner.keyword = keyword
-	scrapeRunner.location = location
-	scrapeRunner.savedCount = 0
-	scrapeRunner.targetMax = maxResults
-	scrapeRunner.currentCard = types.LiveCard{}
-	if geoErr == nil {
-		scrapeRunner.mapLat, scrapeRunner.mapLng = latStr, lngStr
-	} else {
-		scrapeRunner.mapLat, scrapeRunner.mapLng = "", ""
-	}
-	scrapeRunner.mu.Unlock()
 
-	go runScrapeJobHTTP(keyword, location, maxResults)
+	jobID := newJobID()
+
+	jobsMu.Lock()
+	pruneFinishedJobs()
+	jobs[jobID] = &scrapeJobState{
+		status:     "running",
+		keyword:    keyword,
+		location:   location,
+		savedCount: 0,
+		targetMax:  maxResults,
+	}
+	if geoErr == nil {
+		jobs[jobID].mapLat, jobs[jobID].mapLng = latStr, lngStr
+	}
+	jobsMu.Unlock()
+
+	go runScrapeJobHTTP(jobID, keyword, location, maxResults)
 
 	resp := map[string]any{
 		"jobId":   jobID,
@@ -117,40 +181,53 @@ func handleAPIScrape(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusAccepted, resp)
 }
 
-func runScrapeJobHTTP(keyword, location string, maxResults int) {
-	logf := func(s string) { appendScrapeLog(s) }
+func runScrapeJobHTTP(jobID, keyword, location string, maxResults int) {
+	defer releaseScrapeSlot()
+
+	logf := func(s string) { appendJobLog(jobID, s) }
 	onProgress := func(saved, target int) {
-		scrapeRunner.mu.Lock()
-		scrapeRunner.savedCount = saved
-		if target > 0 {
-			scrapeRunner.targetMax = target
+		jobsMu.Lock()
+		if j := jobs[jobID]; j != nil {
+			j.savedCount = saved
+			if target > 0 {
+				j.targetMax = target
+			}
 		}
-		scrapeRunner.mu.Unlock()
+		jobsMu.Unlock()
 	}
 	onCurrentCard := func(card types.LiveCard) {
-		scrapeRunner.mu.Lock()
-		scrapeRunner.currentCard = card
-		scrapeRunner.mu.Unlock()
+		jobsMu.Lock()
+		if j := jobs[jobID]; j != nil {
+			j.currentCard = card
+		}
+		jobsMu.Unlock()
 	}
 	stores, err := RunScrapeJob(keyword, location, maxResults, logf, false, ScrapeJobOptions{
-		Headless:      true,
-		OnProgress:    onProgress,
-		OnCurrentCard: onCurrentCard,
+		Headless:         true,
+		ResultFileSuffix: jobID,
+		OnProgress:       onProgress,
+		OnCurrentCard:    onCurrentCard,
 	})
 
-	scrapeRunner.mu.Lock()
-	defer scrapeRunner.mu.Unlock()
-	if err != nil {
-		scrapeRunner.status = "error"
-		scrapeRunner.errMsg = err.Error()
-		scrapeRunner.stores = nil
+	jobsMu.Lock()
+	defer jobsMu.Unlock()
+	j := jobs[jobID]
+	if j == nil {
 		return
 	}
-	scrapeRunner.status = "done"
-	scrapeRunner.stores = stores
-	scrapeRunner.savedCount = len(stores)
-	scrapeRunner.targetMax = maxResults
-	scrapeRunner.errMsg = ""
+	now := time.Now()
+	j.finishedAt = now
+	if err != nil {
+		j.status = "error"
+		j.errMsg = err.Error()
+		j.stores = nil
+		return
+	}
+	j.status = "done"
+	j.stores = stores
+	j.savedCount = len(stores)
+	j.targetMax = maxResults
+	j.errMsg = ""
 }
 
 // handleScrapeStatus: GET /api/scrape/status?jobId=...
@@ -160,24 +237,25 @@ func handleScrapeStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	jobID := strings.TrimSpace(r.URL.Query().Get("jobId"))
-	scrapeRunner.mu.Lock()
-	if jobID == "" || jobID != scrapeRunner.jobID {
-		scrapeRunner.mu.Unlock()
+	jobsMu.Lock()
+	j := jobs[jobID]
+	if jobID == "" || j == nil {
+		jobsMu.Unlock()
 		writeJSON(w, http.StatusNotFound, map[string]string{"error": "job tidak ditemukan"})
 		return
 	}
-	logs := append([]string(nil), scrapeRunner.logs...)
-	status := scrapeRunner.status
-	storesCopy := append([]types.StoreInfo(nil), scrapeRunner.stores...)
-	errMsg := scrapeRunner.errMsg
-	kw := scrapeRunner.keyword
-	loc := scrapeRunner.location
-	saved := scrapeRunner.savedCount
-	target := scrapeRunner.targetMax
-	mapLat := scrapeRunner.mapLat
-	mapLng := scrapeRunner.mapLng
-	currentCard := scrapeRunner.currentCard
-	scrapeRunner.mu.Unlock()
+	logs := append([]string(nil), j.logs...)
+	status := j.status
+	storesCopy := append([]types.StoreInfo(nil), j.stores...)
+	errMsg := j.errMsg
+	kw := j.keyword
+	loc := j.location
+	saved := j.savedCount
+	target := j.targetMax
+	mapLat := j.mapLat
+	mapLng := j.mapLng
+	currentCard := j.currentCard
+	jobsMu.Unlock()
 
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	resp := map[string]any{

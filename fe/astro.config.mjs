@@ -6,6 +6,7 @@ import cloudflare from "@astrojs/cloudflare";
 
 // https://astro.build/config
 export default defineConfig({
+  site: process.env.PUBLIC_SITE_URL || undefined,
   session: {
     driver: {
       entrypoint: "unstorage/drivers/null",

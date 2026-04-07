@@ -5,6 +5,8 @@ import DialogDesktop from "./DialogDesktop.astro";
 
 import DialogSocial from "./DialogSocial.astro";
 
+import DialogDonasi from "./DialogDonasi.astro";
+
 import DialogSettings from "./DialogSettings.astro";
 
 import Label from "./ui/Label.astro";
@@ -36,7 +38,7 @@ const apiBase = scrapMapsApiBase;
       </div>
       <span
         class="min-w-0 truncate text-base font-semibold tracking-tight sm:text-lg"
-        >MapsScraper Pro</span
+        >Trackmaps Location Finder</span
       >
     </div>
     <div
@@ -80,22 +82,22 @@ const apiBase = scrapMapsApiBase;
           <span id="header-status-text" class="truncate">Mengecek backend…</span
           >
         </div>
-        <div class="h-4 w-px bg-[#2d2d2d] hidden sm:block"></div>
+        <span class="max-w-[min(100%,14rem)] truncate lg:max-w-xs">
+          <span class="text-white font-medium">API:</span>
+          <span id="header-api-url" class="font-mono text-[11px]"
+            >{apiBase}</span
+          >
+        </span>
+        <span class="h-3 w-px bg-[#2d2d2d] shrink-0" aria-hidden="true"></span>
         <div
           class="hidden min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-sm text-gray-400 md:flex lg:max-w-[min(100%,24rem)]"
         >
-          <span class="max-w-[min(100%,14rem)] truncate lg:max-w-xs">
-            <span class="text-white font-medium">API:</span>
-            <span id="header-api-url" class="font-mono text-[11px]"
-              >{apiBase}</span
-            >
-          </span>
           <span class="h-3 w-px bg-[#2d2d2d] shrink-0" aria-hidden="true"
           ></span>
           <span class="shrink-0">
-            <span class="text-white font-medium">Proxy:</span>
+            <span class="text-white font-medium">Serverless:</span>
             <span id="header-proxy-label" class="text-gray-300"
-              >Aktif (DE-104)</span
+              >Aktif (Railway)</span
             >
           </span>
         </div>
@@ -157,6 +159,9 @@ const apiBase = scrapMapsApiBase;
           ariaLabel="Settings"
         >
           <iconify-icon icon="lucide:settings" class="text-xl"></iconify-icon>
+        </Button>
+        <Button variant="ghost" id="donasi-modal-trigger" ariaLabel="Donasi">
+          <iconify-icon icon="lucide:hand-coins" class="text-xl"></iconify-icon>
         </Button>
         <Button
           variant="ghostHeart"
@@ -770,6 +775,7 @@ const apiBase = scrapMapsApiBase;
 
 <DialogDesktop />
 <DialogSocial />
+<DialogDonasi />
 <DialogSettings />
 
 <!-- Tanpa define:vars: Astro membungkusnya dalam IIFE dan `import` jadi invalid → skrip tidak jalan. -->

@@ -12,6 +12,28 @@ import (
 	"github.com/chromedp/chromedp"
 )
 
+// placeKeyAt mengembalikan kunci unik /maps/place/... untuk kartu di indeks (kosong jika tidak ada).
+func (g *GoogleMapsScraper) placeKeyAt(ctx context.Context, index int) string {
+	var raw []byte
+	js := fmt.Sprintf(jsPlaceCardsFn+`
+		(function(){
+			var cards = __gmapsPlaceCards();
+			var card = cards[%d];
+			if (!card) return '';
+			var href = (card.getAttribute('href') || '').trim();
+			return href.split('?')[0].split('#')[0];
+		})()
+	`, index)
+	if err := chromedp.Run(ctx, chromedp.Evaluate(js, &raw)); err != nil {
+		return ""
+	}
+	var key string
+	if len(raw) > 0 {
+		_ = json.Unmarshal(raw, &key)
+	}
+	return strings.TrimSpace(key)
+}
+
 func (g *GoogleMapsScraper) getCardCount(ctx context.Context) int {
 	var raw []byte
 	err := chromedp.Run(ctx, chromedp.Evaluate(jsPlaceCardsFn+`
@@ -34,6 +56,16 @@ func (g *GoogleMapsScraper) getCardCount(ctx context.Context) int {
 }
 
 func (g *GoogleMapsScraper) processCard(index int, ctx context.Context) (*types.StoreInfo, error) {
+	placeKey := g.placeKeyAt(ctx, index)
+	if placeKey != "" {
+		g.mu.Lock()
+		skip := g.processedIDs[placeKey]
+		g.mu.Unlock()
+		if skip {
+			return nil, nil
+		}
+	}
+
 	g.mu.Lock()
 	prevCardName := strings.TrimSpace(g.lastCardName)
 	g.mu.Unlock()
@@ -72,8 +104,8 @@ func (g *GoogleMapsScraper) processCard(index int, ctx context.Context) (*types.
 				return true;
 			})()`, prevCardName),
 			nil,
-			chromedp.WithPollingTimeout(9*time.Second),
-			chromedp.WithPollingInterval(120*time.Millisecond),
+			chromedp.WithPollingTimeout(8*time.Second),
+			chromedp.WithPollingInterval(90*time.Millisecond),
 		),
 	)
 	cancel()
@@ -81,7 +113,7 @@ func (g *GoogleMapsScraper) processCard(index int, ctx context.Context) (*types.
 		g.restoreListAfterDetail(ctx)
 		return nil, fmt.Errorf("panel tidak muncul")
 	}
-	time.Sleep(400 * time.Millisecond)
+	time.Sleep(220 * time.Millisecond)
 
 	getDataJS := `
 		(function(){
@@ -177,21 +209,64 @@ func (g *GoogleMapsScraper) processCard(index int, ctx context.Context) (*types.
 					break;
 				}
 			}
+			function __ratingNum(s) {
+				if (!s) return '';
+				var m = s.match(/([0-9]+(?:[.,][0-9]+)?)/);
+				if (!m) return '';
+				var v = parseFloat(String(m[1]).replace(',', '.'));
+				if (v >= 1 && v <= 5) return String(m[1]).replace(',', '.');
+				return '';
+			}
+			function __ratingFromLabel(s) {
+				if (!s) return '';
+				var low = s.toLowerCase();
+				if (low.indexOf('star') >= 0 || low.indexOf('bintang') >= 0 || low.indexOf('rating') >= 0 ||
+					low.indexOf('penilaian') >= 0 || low.indexOf('ulasan') >= 0 || low.indexOf('review') >= 0 ||
+					/\bout of\b/i.test(s) || /^[0-9]+[.,][0-9]+\s*\/\s*5/.test(low)) {
+					return __ratingNum(s);
+				}
+				return '';
+			}
 			var rating = '';
-			var ratingBtn = document.querySelector('button[jsaction*="pane.rating.moreReviews"]');
-			if (ratingBtn) {
-				var al = (ratingBtn.getAttribute('aria-label') || '').trim();
-				var m = al.match(/([0-9]+(?:[.,][0-9]+)?)/);
-				if (m) rating = m[1].replace(',', '.');
+			var ratingBtnSels = [
+				'button[jsaction*="pane.rating.moreReviews"]',
+				'button[jsaction*="pane.rating.place"]',
+				'button[jsaction*="pane.rating"]',
+				'[role="main"] button[jsaction*="pane.rating"]',
+				'[role="main"] a[jsaction*="pane.rating"]'
+			];
+			for (var rbi = 0; rbi < ratingBtnSels.length && !rating; rbi++) {
+				var rb = document.querySelector(ratingBtnSels[rbi]);
+				if (!rb) continue;
+				var ral = (rb.getAttribute('aria-label') || '').trim();
+				rating = __ratingFromLabel(ral);
+				if (!rating) rating = __ratingNum(ral);
 			}
 			if (!rating) {
-				var ratingNodes = document.querySelectorAll('[role="main"] span, [role="main"] div');
-				for (var ri = 0; ri < ratingNodes.length; ri++) {
-					var rt = (ratingNodes[ri].textContent || '').trim();
-					if (!rt) continue;
-					if (!/(\\u2605|star|bintang)/i.test(rt) && !/[0-9][.,][0-9]/.test(rt)) continue;
-					var rm = rt.match(/([0-9]+(?:[.,][0-9]+)?)/);
-					if (rm) { rating = rm[1].replace(',', '.'); break; }
+				var rImgs = document.querySelectorAll('[role="main"] [role="img"][aria-label]');
+				for (var rii = 0; rii < rImgs.length && !rating; rii++) {
+					var ial = (rImgs[rii].getAttribute('aria-label') || '').trim();
+					rating = __ratingFromLabel(ial);
+				}
+			}
+			if (!rating) {
+				var h1r = document.querySelector('[role="main"] h1.DUwDvf') || document.querySelector('[role="main"] h1');
+				var sec = h1r ? h1r.parentElement : null;
+				for (var d = 0; d < 5 && sec && !rating; d++) {
+					var ns = sec.querySelectorAll('span, [role="img"]');
+					for (var nj = 0; nj < ns.length && nj < 40 && !rating; nj++) {
+						var eln = ns[nj];
+						var al2 = (eln.getAttribute('aria-label') || '').trim();
+						if (al2) rating = __ratingFromLabel(al2);
+						if (!rating) {
+							var tx2 = (eln.textContent || '').trim();
+							if (tx2.length >= 3 && tx2.length <= 5 && /^[0-9][.,][0-9]$/.test(tx2)) {
+								var v2 = parseFloat(tx2.replace(',', '.'));
+								if (v2 >= 1 && v2 <= 5) rating = tx2.replace(',', '.');
+							}
+						}
+					}
+					sec = sec.parentElement;
 				}
 			}
 			return JSON.stringify({ name: name, phone: phone, hasWebsite: hasWebsite, address: address, category: category, openingStatus: openingStatus, rating: rating });
@@ -224,6 +299,11 @@ func (g *GoogleMapsScraper) processCard(index int, ctx context.Context) (*types.
 
 	name := strings.TrimSpace(data.Name)
 	if name == "" || isJunkPlaceTitle(name) {
+		if placeKey != "" {
+			g.mu.Lock()
+			g.processedIDs[placeKey] = true
+			g.mu.Unlock()
+		}
 		return nil, nil
 	}
 	g.mu.Lock()
@@ -240,9 +320,17 @@ func (g *GoogleMapsScraper) processCard(index int, ctx context.Context) (*types.
 	g.mu.Lock()
 	if g.processedNames[name] {
 		g.mu.Unlock()
+		if placeKey != "" {
+			g.mu.Lock()
+			g.processedIDs[placeKey] = true
+			g.mu.Unlock()
+		}
 		return nil, nil
 	}
 	g.processedNames[name] = true
+	if placeKey != "" {
+		g.processedIDs[placeKey] = true
+	}
 	g.mu.Unlock()
 
 	return &types.StoreInfo{

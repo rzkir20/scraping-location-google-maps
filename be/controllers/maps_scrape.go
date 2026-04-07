@@ -42,7 +42,7 @@ func (g *GoogleMapsScraper) dismissBlockingUI(ctx context.Context) {
 			})()
 		`, nil),
 	)
-	time.Sleep(600 * time.Millisecond)
+	time.Sleep(350 * time.Millisecond)
 }
 
 func (g *GoogleMapsScraper) ScrapeCoffeeShops(url string, maxResults int) ([]types.StoreInfo, ScrapeSummary, error) {
@@ -51,15 +51,15 @@ func (g *GoogleMapsScraper) ScrapeCoffeeShops(url string, maxResults int) ([]typ
 	g.progressf("📍 Navigating to: %s", url)
 	g.progressf("📋 Target: kumpulkan hingga %d listing pertama yang terbaca.", maxResults)
 
-	// Banyak kartu × buka panel butuh waktu; sesuaikan dengan target (tanpa plafon artifisial).
-	scrapeBudget := 10*time.Minute + time.Duration(maxResults)*22*time.Second
+	// Banyak kartu × buka panel butuh waktu; per kartu ~sedikit lebih ketat karena skip URL sudah diproses.
+	scrapeBudget := 10*time.Minute + time.Duration(maxResults)*18*time.Second
 	scrapeCtx, cancel := context.WithTimeout(g.ctx, scrapeBudget)
 	defer cancel()
 
 	err := chromedp.Run(scrapeCtx,
 		chromedp.Navigate(url),
 		chromedp.WaitVisible("body", chromedp.ByQuery),
-		chromedp.Sleep(2*time.Second),
+		chromedp.Sleep(1200*time.Millisecond),
 	)
 	if err != nil {
 		return nil, summary, fmt.Errorf("failed to navigate: %w", err)
@@ -79,7 +79,7 @@ func (g *GoogleMapsScraper) ScrapeCoffeeShops(url string, maxResults int) ([]typ
 			})()`,
 			nil,
 			chromedp.WithPollingTimeout(45*time.Second),
-			chromedp.WithPollingInterval(300*time.Millisecond),
+			chromedp.WithPollingInterval(200*time.Millisecond),
 		),
 	)
 	if err != nil {
@@ -88,9 +88,7 @@ func (g *GoogleMapsScraper) ScrapeCoffeeShops(url string, maxResults int) ([]typ
 
 	_ = chromedp.Run(scrapeCtx,
 		chromedp.WaitVisible("[role=\"main\"]", chromedp.ByQuery),
-	)
-	_ = chromedp.Run(scrapeCtx,
-		chromedp.Sleep(1*time.Second),
+		chromedp.Sleep(350*time.Millisecond),
 	)
 
 	var pageInfo struct {
@@ -126,12 +124,12 @@ func (g *GoogleMapsScraper) ScrapeCoffeeShops(url string, maxResults int) ([]typ
 				return false;
 			})()`, nil),
 		)
-		time.Sleep(400 * time.Millisecond)
+		time.Sleep(250 * time.Millisecond)
 
 		cardCountInt := g.getCardCount(scrapeCtx)
 		if cardCountInt == 0 {
 			scrollAttempts++
-			time.Sleep(1 * time.Second)
+			time.Sleep(650 * time.Millisecond)
 			continue
 		}
 		g.progressf("🔎 %d kartu", cardCountInt)

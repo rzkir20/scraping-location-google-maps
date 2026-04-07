@@ -41,7 +41,7 @@ func (g *GoogleMapsScraper) closeDetailPanelClicks(ctx context.Context) {
 			})()
 		`, nil),
 	)
-	time.Sleep(450 * time.Millisecond)
+	time.Sleep(280 * time.Millisecond)
 }
 
 func feedReadyPoll() chromedp.Action {
@@ -53,7 +53,7 @@ func feedReadyPoll() chromedp.Action {
 		})()`,
 		nil,
 		chromedp.WithPollingTimeout(18*time.Second),
-		chromedp.WithPollingInterval(120*time.Millisecond),
+		chromedp.WithPollingInterval(90*time.Millisecond),
 	)
 }
 
@@ -61,7 +61,7 @@ func feedReadyPoll() chromedp.Action {
 func (g *GoogleMapsScraper) restoreListAfterDetail(ctx context.Context) {
 	g.closeDetailPanelClicks(ctx)
 	if err := chromedp.Run(ctx, feedReadyPoll()); err == nil {
-		time.Sleep(200 * time.Millisecond)
+		time.Sleep(120 * time.Millisecond)
 		return
 	}
 	// NavigateBack sering keluar dari halaman hasil → kartu berikutnya gagal massal; pakai ulang URL pencarian.
@@ -70,7 +70,7 @@ func (g *GoogleMapsScraper) restoreListAfterDetail(ctx context.Context) {
 		_ = chromedp.Run(ctx,
 			chromedp.Navigate(g.lastSearchURL),
 			chromedp.WaitVisible("body", chromedp.ByQuery),
-			chromedp.Sleep(2*time.Second),
+			chromedp.Sleep(1400*time.Millisecond),
 		)
 		g.dismissBlockingUI(ctx)
 		_ = chromedp.Run(ctx,
@@ -83,13 +83,13 @@ func (g *GoogleMapsScraper) restoreListAfterDetail(ctx context.Context) {
 				})()`,
 				nil,
 				chromedp.WithPollingTimeout(40*time.Second),
-				chromedp.WithPollingInterval(300*time.Millisecond),
+				chromedp.WithPollingInterval(200*time.Millisecond),
 			),
 		)
 		_ = chromedp.Run(ctx, feedReadyPoll())
-		time.Sleep(250 * time.Millisecond)
+		time.Sleep(180 * time.Millisecond)
 		return
 	}
 	g.progressLine("⚠️  Daftar hasil belum muncul (tidak ada URL pencarian tersimpan).")
-	time.Sleep(500 * time.Millisecond)
+	time.Sleep(350 * time.Millisecond)
 }

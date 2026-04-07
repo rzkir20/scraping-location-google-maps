@@ -1,0 +1,130 @@
+---
+import Dialog from "./ui/Dialog.astro";
+import gopayQr from "../assets/gopay.jpeg";
+
+const GOPAY_NUMBER = "081398632939";
+---
+
+<Dialog
+  id="donasi-modal"
+  zIndex={10010}
+  panelClass="max-w-md max-h-[min(90vh,calc(100dvh-2rem))] overflow-y-auto overflow-x-hidden overscroll-contain custom-scrollbar p-6"
+  closeButtonClass="absolute top-4 right-4 text-gray-500 transition-colors hover:text-white"
+  closeIconClass="text-xl"
+>
+  <div class="mb-5 flex items-start gap-3">
+    <div
+      class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#00AED6]/15 ring-1 ring-[#00AED6]/30"
+    >
+      <iconify-icon icon="simple-icons:gopay" class="text-3xl text-[#00AED6]"
+      ></iconify-icon>
+    </div>
+    <div class="min-w-0">
+      <h2 class="text-xl font-bold text-white">Donasi via GoPay</h2>
+      <p class="text-xs text-gray-500">
+        Terima kasih atas dukungan untuk Trackmaps Location Finder.
+      </p>
+    </div>
+  </div>
+
+  <div class="mb-5">
+    <p class="mb-3 text-center text-[13px] leading-snug text-gray-300">
+      Minta temanmu scan kode QR ini dari aplikasi
+      <span class="font-semibold text-white">GoPay</span> atau
+      <span class="font-semibold text-white">Gojek</span>.
+    </p>
+    <div
+      class="overflow-hidden rounded-2xl border border-[#2d2d2d] bg-[#0a0a0a] p-2 shadow-inner"
+    >
+      <img
+        src={gopayQr.src}
+        width={gopayQr.width}
+        height={gopayQr.height}
+        alt="QR code GoPay untuk donasi"
+        class="mx-auto h-auto w-full rounded-xl object-contain"
+        loading="lazy"
+        decoding="async"
+      />
+    </div>
+  </div>
+
+  <div class="rounded-2xl border border-[#2d2d2d] bg-[#1f1f1f] p-4 sm:p-5">
+    <p
+      class="mb-1 text-[10px] font-bold uppercase tracking-widest text-gray-500"
+    >
+      Nama penerima
+    </p>
+    <p class="mb-4 text-lg font-bold text-white">Rizki Ramadhan</p>
+
+    <p
+      class="mb-1 text-[10px] font-bold uppercase tracking-widest text-gray-500"
+    >
+      Nomor GoPay
+    </p>
+    <div class="flex flex-wrap items-center gap-2">
+      <p
+        id="donasi-gopay-number"
+        class="select-all font-mono text-xl font-bold tracking-wide text-[#00D4AA] sm:text-2xl"
+      >
+        {GOPAY_NUMBER}
+      </p>
+      <button
+        type="button"
+        class="donasi-copy-gopay-btn inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-[#2d2d2d] bg-[#2a2a2a] px-3 py-2 text-xs font-semibold text-gray-300 transition-colors hover:border-[#00AED6]/50 hover:text-white"
+        aria-label="Salin nomor GoPay"
+      >
+        <iconify-icon icon="lucide:copy" class="text-sm"></iconify-icon>
+        Salin
+      </button>
+    </div>
+    <p
+      id="donasi-copy-feedback"
+      class="mt-1 hidden text-[11px] text-emerald-400"
+      role="status"
+      aria-live="polite"
+    >
+    </p>
+    <p class="mt-4 text-[11px] leading-relaxed text-gray-500">
+      Atau buka aplikasi <span class="text-gray-400">Gojek</span> /
+      <span class="text-gray-400">GoPay</span> dan transfer ke nomor di atas.
+    </p>
+  </div>
+</Dialog>
+
+<script define:vars={{ gopayPhone: GOPAY_NUMBER }}>
+  function wireDonasiCopy() {
+    const btn = document.querySelector(".donasi-copy-gopay-btn");
+    const feedback = document.getElementById("donasi-copy-feedback");
+    if (!btn || !feedback || btn.hasAttribute("data-copy-wired")) return;
+    btn.setAttribute("data-copy-wired", "1");
+
+    let hideTimer;
+
+    btn.addEventListener("click", async () => {
+      window.clearTimeout(hideTimer);
+      feedback.classList.add("hidden");
+      feedback.classList.remove("text-amber-400");
+      feedback.classList.add("text-emerald-400");
+
+      try {
+        await navigator.clipboard.writeText(gopayPhone);
+        feedback.textContent = "Nomor disalin ke papan klip.";
+        feedback.classList.remove("hidden");
+        hideTimer = window.setTimeout(() => {
+          feedback.classList.add("hidden");
+        }, 2500);
+      } catch {
+        feedback.textContent =
+          "Tidak bisa menyalin otomatis — pilih nomor lalu salin manual.";
+        feedback.classList.remove("hidden", "text-emerald-400");
+        feedback.classList.add("text-amber-400");
+        hideTimer = window.setTimeout(() => {
+          feedback.classList.add("hidden");
+        }, 4000);
+      }
+    });
+  }
+
+  wireDonasiCopy();
+  document.addEventListener("astro:page-load", wireDonasiCopy);
+</script>

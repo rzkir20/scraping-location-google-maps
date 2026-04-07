@@ -13,6 +13,8 @@ scraper.exe
 # Output files
 results.json
 results.csv
+results_*.json
+results_*.csv
 
 # Environment
 .env

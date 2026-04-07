@@ -93,7 +93,74 @@ const LS = {
   soundOn: "msp_sound_on",
   soundPreset: "msp_sound_preset",
   sessions: "msp_sessions_v1",
+  /** Hasil tabel + query + mapCenter — survive refresh; diganti saat scrape sukses dengan data. */
+  dashboardResults: "msp_dashboard_results_v1",
 } as const;
+
+type PersistedDashboardV1 = {
+  v: 1;
+  savedAt: number;
+  keyword: string;
+  location: string;
+  mapCenter: MapCenter | null;
+  stores: ScrapeStoreRow[];
+};
+
+function readPersistedDashboard(): PersistedDashboardV1 | null {
+  try {
+    const raw = localStorage.getItem(LS.dashboardResults);
+    if (!raw) return null;
+    const j = JSON.parse(raw) as unknown;
+    if (!j || typeof j !== "object") return null;
+    const o = j as Record<string, unknown>;
+    if (o.v !== 1) return null;
+    const stores = o.stores;
+    if (!Array.isArray(stores)) return null;
+    const keyword = typeof o.keyword === "string" ? o.keyword : "";
+    const location = typeof o.location === "string" ? o.location : "";
+    let mapCenter: MapCenter | null = null;
+    if (o.mapCenter && typeof o.mapCenter === "object") {
+      const mc = o.mapCenter as Record<string, unknown>;
+      const lat = mc.lat != null ? String(mc.lat) : "";
+      const lng = mc.lng != null ? String(mc.lng) : "";
+      if (lat && lng) mapCenter = { lat, lng };
+    }
+    return {
+      v: 1,
+      savedAt:
+        typeof o.savedAt === "number" && Number.isFinite(o.savedAt)
+          ? o.savedAt
+          : Date.now(),
+      keyword,
+      location,
+      mapCenter,
+      stores: stores as ScrapeStoreRow[],
+    };
+  } catch {
+    return null;
+  }
+}
+
+function writePersistedDashboard(
+  stores: ScrapeStoreRow[],
+  keyword: string,
+  location: string,
+  mapCenter: MapCenter | null | undefined,
+): void {
+  try {
+    const payload: PersistedDashboardV1 = {
+      v: 1,
+      savedAt: Date.now(),
+      keyword,
+      location,
+      mapCenter: mapCenter && mapCenter.lat && mapCenter.lng ? mapCenter : null,
+      stores,
+    };
+    localStorage.setItem(LS.dashboardResults, JSON.stringify(payload));
+  } catch (e) {
+    console.warn("Tidak bisa menyimpan hasil ke localStorage:", e);
+  }
+}
 
 function readSoundOn(): boolean {
   const v = localStorage.getItem(LS.soundOn);
@@ -410,11 +477,20 @@ function setResultsTable(stores: ScrapeStoreRow[]) {
   applyDashboardAggregates(stores);
 }
 
-function setResultsLoading(keyword: string, location: string, target: number) {
+function setResultsLoading(
+  keyword: string,
+  location: string,
+  target: number,
+  opts?: { preserveTableRows?: boolean },
+) {
   const tbody = document.getElementById("results-tbody");
   const heading = document.getElementById("results-heading");
   const pag = document.getElementById("results-pagination-text");
   if (!tbody) return;
+
+  const preserve =
+    opts?.preserveTableRows ??
+    document.querySelectorAll("#results-tbody tr.result-row").length > 0;
 
   if (heading) heading.textContent = "Results (loading...)";
   if (pag) {
@@ -423,6 +499,8 @@ function setResultsLoading(keyword: string, location: string, target: number) {
         ? `Sedang mengambil data “${keyword}” di ${location} · target ${target}`
         : `Sedang mengambil data “${keyword}” di ${location}`;
   }
+
+  if (preserve) return;
 
   tbody.innerHTML = `
     <tr>
@@ -918,6 +996,10 @@ function wireModalsAndSettings() {
           openModal("social-modal");
           return;
         }
+        if (node.id === "donasi-modal-trigger") {
+          openModal("donasi-modal");
+          return;
+        }
         if (node.id === "sidebar-menu-trigger") {
           openSheet(SIDEBAR_SEARCH_SHEET_ID);
           document
@@ -1043,7 +1125,7 @@ function wireModalsAndSettings() {
     .getElementById("settings-sessions-restore")
     ?.addEventListener("click", () => {
       window.alert(
-        "Riwayat hanya menyimpan ringkasan. Isi kembali keyword dan lokasi di sidebar, lalu jalankan scraping untuk memuat ulang data hasil.",
+        "Tabel hasil terakhir otomatis disimpan di browser (localStorage) dan dimuat lagi saat refresh. Riwayat sesi di bawah hanya ringkasan; untuk memulihkan peta/tabel dari cadangan file, gunakan ekspor CSV/JSON.",
       );
     });
 
@@ -1053,6 +1135,7 @@ function wireModalsAndSettings() {
     closeSidebarSearchSheetUi();
     closeModal("settings-modal");
     closeModal("social-modal");
+    closeModal("donasi-modal");
     closeModal("download-modal");
   });
 }
@@ -1120,17 +1203,17 @@ function createStartScrapeHandler(apiBase: string) {
       data = {};
     }
 
-    if (res.status === 409) {
+    if (res.status === 503) {
       setScrapeBusy(false);
       updateLiveProgress(0, 0, "idle");
       void safeIdleMap();
-      setLog(errMsg(data, "Scraping lain masih berjalan."));
-      appendDashboardNotification(
-        "Scraping bentrok",
-        errMsg(data, "Job lain masih berjalan di server."),
-        "error",
+      const msg = errMsg(
+        data,
+        "Server sibuk (banyak job paralel). Coba lagi sebentar.",
       );
-      window.alert(errMsg(data, "Scraping masih berjalan di server."));
+      setLog(msg);
+      appendDashboardNotification("Server sibuk", msg, "error");
+      window.alert(msg);
       return;
     }
     if (!res.ok) {
@@ -1264,6 +1347,7 @@ function createStartScrapeHandler(apiBase: string) {
         updateLiveProgress(stores.length, tgt, "done");
         renderLiveCard(j.currentCard ?? null);
         setResultsTable(stores);
+        writePersistedDashboard(stores, kw, loc, j.mapCenter ?? null);
         try {
           const m = await getMapMod();
           m.plotStoresOnMap(stores, j.mapCenter ?? null);
@@ -1291,10 +1375,9 @@ function createStartScrapeHandler(apiBase: string) {
       updateLiveProgress(0, 0, "idle");
       renderLiveCard(null);
       void safeIdleMap();
-      setResultsTable([]);
       appendDashboardNotification(
         "Job selesai tanpa data",
-        "Status bukan error atau done dengan daftar toko kosong.",
+        "Status bukan error atau done dengan daftar toko kosong. Hasil sebelumnya di tabel tetap ditampilkan.",
         "error",
       );
     };
@@ -1322,8 +1405,22 @@ export function initScrapMapsDashboard(
     .getElementById("list-view-toggle")
     ?.addEventListener("click", () => setViewMode("list"));
 
-  setResultsTable([]);
-  updateLiveProgress(0, 0, "idle");
+  const persistedInit = readPersistedDashboard();
+  if (persistedInit?.stores?.length) {
+    lastScrapeQuery = {
+      keyword: persistedInit.keyword,
+      location: persistedInit.location,
+    };
+    setResultsTable(persistedInit.stores);
+    updateLiveProgress(
+      persistedInit.stores.length,
+      persistedInit.stores.length,
+      "done",
+    );
+  } else {
+    setResultsTable([]);
+    updateLiveProgress(0, 0, "idle");
+  }
   renderLiveCard(null);
   loadSoundIntoUI();
   renderSessionsTable();
@@ -1337,7 +1434,14 @@ export function initScrapMapsDashboard(
     try {
       const m = await getMapMod();
       m.ensureMap();
-      m.showIdlePreviewMap();
+      const p = readPersistedDashboard();
+      if (p?.stores?.length) {
+        m.plotStoresOnMap(p.stores, p.mapCenter ?? null);
+        m.setIdleBannerVisible(false);
+        m.invalidateMapSize();
+      } else {
+        m.showIdlePreviewMap();
+      }
     } catch (e) {
       console.error("Peta preview gagal dimuat:", e);
     }

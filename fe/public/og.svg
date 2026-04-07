@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="ogTitle">
+  <title id="ogTitle">Trackmaps Location Finder</title>
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f0f0f"/>
+      <stop offset="100%" style="stop-color:#1a1a1a"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect x="48" y="48" width="1104" height="534" rx="24" fill="none" stroke="#0066cc" stroke-width="2" opacity="0.5"/>
+  <text x="600" y="260" text-anchor="middle" fill="#ffffff" font-family="system-ui,sans-serif" font-size="56" font-weight="700">Trackmaps Location Finder</text>
+  <text x="600" y="340" text-anchor="middle" fill="#9ca3af" font-family="system-ui,sans-serif" font-size="28">Maps scraping &amp; lead generation</text>
+  <circle cx="600" cy="450" r="12" fill="#0066cc"/>
+</svg>

@@ -69,10 +69,16 @@ func RunScrapeJob(keyword, locationName string, maxResults int, logf func(string
 		logf(fmt.Sprintf("%d listing — lihat tabel di bawah.", len(stores)))
 	}
 
-	if err := scraper.SaveToFile(stores, "results.json"); err != nil {
+	jsonName := "results.json"
+	csvName := "results.csv"
+	if opts.ResultFileSuffix != "" {
+		jsonName = fmt.Sprintf("results_%s.json", opts.ResultFileSuffix)
+		csvName = fmt.Sprintf("results_%s.csv", opts.ResultFileSuffix)
+	}
+	if err := scraper.SaveToFile(stores, jsonName); err != nil {
 		logf(fmt.Sprintf("Error simpan JSON: %v", err))
 	}
-	if err := scraper.SaveToCSV(stores, "results.csv"); err != nil {
+	if err := scraper.SaveToCSV(stores, csvName); err != nil {
 		logf(fmt.Sprintf("⚠ Error simpan CSV: %v", err))
 	}
 
