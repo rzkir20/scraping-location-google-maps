@@ -190,6 +190,175 @@ function formatCount(n: unknown): string {
   return n.toLocaleString("id-ID");
 }
 
+/** Keyword/lokasi scrape terakhir (untuk kartu Location Summary). */
+let lastScrapeQuery: { keyword: string; location: string } = {
+  keyword: "",
+  location: "",
+};
+
+function parseRating(raw: unknown): number | null {
+  if (raw == null) return null;
+  const s = String(raw).trim();
+  if (!s || s === "—") return null;
+  const m = s.replace(/,/g, ".").match(/(\d+(?:\.\d+)?)/);
+  if (!m) return null;
+  const v = parseFloat(m[1]);
+  if (!Number.isFinite(v)) return null;
+  return Math.min(5, Math.max(0, v));
+}
+
+function renderAnalyticsTopRatedRows(stores: ScrapeStoreRow[]): string {
+  const rated = stores
+    .map((s) => ({ s, r: parseRating(s.rating) }))
+    .filter((x): x is { s: ScrapeStoreRow; r: number } => x.r != null);
+  rated.sort(
+    (a, b) =>
+      b.r - a.r || (a.s.name || "").localeCompare(b.s.name || "", "id"),
+  );
+  const top = rated.slice(0, 3);
+  if (!top.length) {
+    return '<p class="px-1 text-xs text-gray-500">Belum ada listing dengan nilai rating.</p>';
+  }
+  return top
+    .map(({ s, r }) => {
+      const name = escapeHtml((s.name || "").trim() || "—");
+      const rounded = Math.min(5, Math.max(0, Math.round(r)));
+      const stars = [1, 2, 3, 4, 5]
+        .map(
+          (i) =>
+            `<iconify-icon icon="lucide:star" class="${i <= rounded ? "text-[#FFD700]" : "text-gray-600"} text-[10px]"></iconify-icon>`,
+        )
+        .join("");
+      return `<div class="flex items-center justify-between rounded-xl border border-[#2d2d2d] bg-[#1f1f1f] p-2 transition-colors hover:border-[#0066cc]/30">
+        <div class="min-w-0">
+          <p class="truncate text-xs font-bold text-white">${name}</p>
+          <div class="flex gap-0.5 text-[10px]">${stars}</div>
+        </div>
+        <span class="shrink-0 rounded bg-[#0066cc]/20 px-1.5 py-0.5 font-mono text-xs font-bold text-[#0066cc]">${r.toFixed(1)}</span>
+      </div>`;
+    })
+    .join("");
+}
+
+/** Strip analitik + ringkasan samping peta dari data hasil (bukan dummy). */
+function applyDashboardAggregates(stores: ScrapeStoreRow[]) {
+  const n = Array.isArray(stores) ? stores.length : 0;
+  const kw = lastScrapeQuery.keyword.trim();
+  const loc = lastScrapeQuery.location.trim();
+
+  const setTxt = (id: string, text: string) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = text;
+  };
+
+  const avgEl = document.getElementById("dash-analytics-avg");
+  const kwEl = document.getElementById("dash-analytics-keyword");
+  const locEl = document.getElementById("dash-analytics-location");
+  const sidebarAvg = document.getElementById("dash-sidebar-avg");
+  const topRated = document.getElementById("analytics-top-rated");
+
+  if (!n) {
+    if (avgEl) avgEl.textContent = "—";
+    if (kwEl) {
+      kwEl.textContent = kw || "—";
+      kwEl.setAttribute("title", kw || "");
+    }
+    if (locEl) {
+      locEl.textContent = loc || "—";
+      locEl.setAttribute("title", loc || "");
+    }
+    if (sidebarAvg) sidebarAvg.textContent = "—";
+    for (const star of [5, 4, 3, 2, 1] as const) {
+      const fill = document.getElementById(`analytics-dist-fill-${star}`);
+      const cnt = document.getElementById(`analytics-dist-count-${star}`);
+      if (fill) fill.style.width = "0%";
+      if (cnt) cnt.textContent = "0";
+    }
+    for (const star of [5, 4, 3] as const) {
+      const f = document.getElementById(`dash-sidebar-dist-fill-${star}`);
+      const lb = document.getElementById(`dash-sidebar-dist-label-${star}`);
+      if (f) f.style.width = "0%";
+      if (lb) lb.textContent = "0";
+    }
+    setTxt("analytics-stat-phone", "—");
+    setTxt("analytics-stat-address", "—");
+    setTxt("analytics-stat-rated", "—");
+    setTxt("analytics-stat-high", "—");
+    if (topRated) {
+      topRated.innerHTML =
+        '<p class="px-1 text-xs text-gray-500">Data muncul setelah scraping selesai.</p>';
+    }
+    return;
+  }
+
+  const parsed: number[] = [];
+  const starCounts: Record<1 | 2 | 3 | 4 | 5, number> = {
+    1: 0,
+    2: 0,
+    3: 0,
+    4: 0,
+    5: 0,
+  };
+  let phoneN = 0;
+  let addrN = 0;
+  let highN = 0;
+
+  for (const s of stores) {
+    if ((s.phone || "").trim()) phoneN++;
+    if ((s.address || "").trim()) addrN++;
+    const p = parseRating(s.rating);
+    if (p != null) {
+      parsed.push(p);
+      if (p >= 4) highN++;
+      const b = Math.round(p);
+      const k = Math.min(5, Math.max(1, b)) as 1 | 2 | 3 | 4 | 5;
+      starCounts[k]++;
+    }
+  }
+
+  const avg =
+    parsed.length > 0
+      ? parsed.reduce((a, b) => a + b, 0) / parsed.length
+      : null;
+  const avgStr = avg != null ? avg.toFixed(1) : "—";
+  if (avgEl) avgEl.textContent = avgStr;
+  if (sidebarAvg) sidebarAvg.textContent = avgStr;
+
+  if (kwEl) {
+    kwEl.textContent = kw || "—";
+    kwEl.setAttribute("title", kw || "");
+  }
+  if (locEl) {
+    locEl.textContent = loc || "—";
+    locEl.setAttribute("title", loc || "");
+  }
+
+  const denom = n > 0 ? n : 1;
+  for (const star of [5, 4, 3, 2, 1] as const) {
+    const c = starCounts[star];
+    const pct = Math.round((c / denom) * 100);
+    const fill = document.getElementById(`analytics-dist-fill-${star}`);
+    const cnt = document.getElementById(`analytics-dist-count-${star}`);
+    if (fill) fill.style.width = `${pct}%`;
+    if (cnt) cnt.textContent = String(c);
+  }
+  for (const star of [5, 4, 3] as const) {
+    const c = starCounts[star];
+    const pct = Math.round((c / denom) * 100);
+    const f = document.getElementById(`dash-sidebar-dist-fill-${star}`);
+    const lb = document.getElementById(`dash-sidebar-dist-label-${star}`);
+    if (f) f.style.width = `${pct}%`;
+    if (lb) lb.textContent = `${c}`;
+  }
+
+  setTxt("analytics-stat-phone", formatCount(phoneN));
+  setTxt("analytics-stat-address", formatCount(addrN));
+  setTxt("analytics-stat-rated", formatCount(parsed.length));
+  setTxt("analytics-stat-high", formatCount(highN));
+
+  if (topRated) topRated.innerHTML = renderAnalyticsTopRatedRows(stores);
+}
+
 function setResultsTable(stores: ScrapeStoreRow[]) {
   const tbody = document.getElementById("results-tbody");
   const heading = document.getElementById("results-heading");
@@ -210,6 +379,7 @@ function setResultsTable(stores: ScrapeStoreRow[]) {
   if (!n) {
     tbody.innerHTML =
       '<tr><td colspan="4" class="px-4 py-10 text-center text-sm text-gray-500 leading-relaxed">Belum ada hasil. Isi <strong class="text-gray-400">keyword</strong>, <strong class="text-gray-400">lokasi</strong>, dan <strong class="text-gray-400">target</strong>, lalu klik <span class="text-[#0066cc] font-medium">Start Scraping</span>.<br/><span class="text-xs mt-2 block text-gray-600">Backend: <code class="text-gray-500">cd be && go run . server</code></span></td></tr>';
+    applyDashboardAggregates([]);
     return;
   }
   tbody.innerHTML = "";
@@ -218,32 +388,26 @@ function setResultsTable(stores: ScrapeStoreRow[]) {
     const rating = (s.rating || "").trim() || "—";
     const addr = (s.address || "").trim() || "—";
     const phone = (s.phone || "").trim() || "—";
-    const sub = addr.length > 48 ? addr.slice(0, 48) + "…" : addr;
     const tr = document.createElement("tr");
     tr.className =
-      "hover:bg-[#1f1f1f] group transition-colors cursor-pointer result-row" +
+      "hover:bg-[#1f1f1f] transition-colors cursor-pointer result-row" +
       (i === 0 ? " bg-[#0066cc]/5 border-l-2 border-[#0066cc]" : "");
     tr.dataset.name = name;
-    tr.dataset.sub = sub;
     tr.dataset.address = addr;
     tr.dataset.phone = phone;
     tr.dataset.rating = rating;
     tr.innerHTML = `
-				<td class="px-4 py-3 text-sm">
-					<span class="font-medium block">${escapeHtml(name)}</span>
-					<span class="text-xs text-gray-500">${escapeHtml(sub)}</span>
+				<td class="min-w-0 max-w-0 px-3 py-3 align-top text-sm wrap-break-word sm:px-4">
+					<span class="font-medium">${escapeHtml(name)}</span>
 				</td>
-				<td class="px-4 py-3">
+				<td class="min-w-0 max-w-0 px-2 py-3 align-top sm:px-4">
 					<span class="text-sm font-mono text-gray-200">${escapeHtml(rating)}</span>
 				</td>
-				<td class="px-4 py-3 text-xs text-gray-400 font-mono">${escapeHtml(phone)}</td>
-				<td class="px-4 py-3 text-right">
-					<button type="button" class="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-[#0066cc] transition-all" aria-label="Detail">
-						<iconify-icon icon="lucide:external-link"></iconify-icon>
-					</button>
-				</td>`;
+				<td class="min-w-0 max-w-0 px-3 py-3 align-top break-all text-xs font-mono text-gray-400 sm:px-4">${escapeHtml(phone)}</td>
+				<td class="min-w-0 max-w-0 px-3 py-3 align-top text-xs leading-relaxed text-gray-400 wrap-break-word sm:px-4">${escapeHtml(addr)}</td>`;
     tbody.appendChild(tr);
   });
+  applyDashboardAggregates(stores);
 }
 
 function setResultsLoading(keyword: string, location: string, target: number) {
@@ -552,6 +716,99 @@ function setScrapeBusy(busy: boolean) {
   }
 }
 
+/** Panel hasil: lebar tetap sama Welcome.astro (`lg:w-[450px]`). */
+const RESULTS_PANEL_LG_WIDTH = "lg:w-[450px]";
+const RESULTS_PANEL_LG_COLLAPSED = "lg:w-11";
+
+const STRIP_RESULTS_HIDDEN = "hidden";
+const STRIP_RESULTS_COLLAPSED =
+  "hidden min-h-0 lg:flex lg:min-h-0 lg:flex-1 lg:flex-col lg:items-center lg:justify-center lg:gap-2 lg:border-l lg:border-[#2d2d2d] lg:bg-[#161616] lg:px-0 lg:py-3";
+
+let resultsPanelCollapsed = false;
+
+/** Map: kanan-atas area peta. Table/list: kiri atas. */
+const VIEW_TOGGLE_CLASS_BASE =
+  "pointer-events-auto absolute top-3 z-30 flex rounded-lg border border-[#2d2d2d] bg-[#161616]/95 p-0.5 shadow-xl sm:top-3 sm:p-1";
+
+function syncViewTogglePosition() {
+  const el = document.getElementById("map-list-view-toggle-group");
+  const split = document.getElementById("dashboard-split");
+  const mapStage = document.getElementById("map-stage");
+  if (!el || !split || !mapStage) return;
+
+  const listMode =
+    split.classList.contains("lg:flex-col") ||
+    mapStage.classList.contains("hidden");
+
+  if (listMode) {
+    el.className = `${VIEW_TOGGLE_CLASS_BASE} left-3 sm:left-28`;
+    return;
+  }
+
+  if (resultsPanelCollapsed) {
+    el.className = `${VIEW_TOGGLE_CLASS_BASE} right-3 sm:right-6 lg:right-[calc(2.75rem+1.5rem)]`;
+  } else {
+    el.className = `${VIEW_TOGGLE_CLASS_BASE} right-3 sm:right-6 lg:right-[calc(450px+1.5rem)]`;
+  }
+}
+
+function syncResultsPanelChrome(mapListMode: "map" | "list") {
+  const panel = document.getElementById("results-panel");
+  const inner = document.getElementById("results-panel-expanded");
+  const strip = document.getElementById("results-panel-collapsed-strip");
+  const collapseToggle = document.getElementById(
+    "results-panel-collapse-toggle",
+  );
+  if (!panel || !inner || !strip) return;
+
+  if (mapListMode === "list") {
+    panel.classList.remove(RESULTS_PANEL_LG_WIDTH, RESULTS_PANEL_LG_COLLAPSED);
+    panel.classList.add("lg:flex-1");
+    inner.classList.remove("lg:hidden");
+    strip.className = STRIP_RESULTS_HIDDEN;
+    strip.setAttribute("aria-hidden", "true");
+    collapseToggle?.setAttribute("aria-expanded", "true");
+    syncViewTogglePosition();
+    return;
+  }
+
+  panel.classList.remove("lg:flex-1");
+  if (resultsPanelCollapsed) {
+    panel.classList.remove(RESULTS_PANEL_LG_WIDTH);
+    panel.classList.add(RESULTS_PANEL_LG_COLLAPSED);
+    inner.classList.add("lg:hidden");
+    strip.className = STRIP_RESULTS_COLLAPSED;
+    strip.setAttribute("aria-hidden", "false");
+    collapseToggle?.setAttribute("aria-expanded", "false");
+  } else {
+    panel.classList.remove(RESULTS_PANEL_LG_COLLAPSED);
+    panel.classList.add(RESULTS_PANEL_LG_WIDTH);
+    inner.classList.remove("lg:hidden");
+    strip.className = STRIP_RESULTS_HIDDEN;
+    strip.setAttribute("aria-hidden", "true");
+    collapseToggle?.setAttribute("aria-expanded", "true");
+  }
+  syncViewTogglePosition();
+}
+
+function wireResultsPanelCollapse() {
+  const split = document.getElementById("dashboard-split");
+  const toggle = () => {
+    if (split?.classList.contains("lg:flex-col")) return;
+    resultsPanelCollapsed = !resultsPanelCollapsed;
+    syncResultsPanelChrome("map");
+    void getMapMod()
+      .then((m) => m.invalidateMapSize())
+      .catch(() => {});
+  };
+  document
+    .getElementById("results-panel-collapse-toggle")
+    ?.addEventListener("click", toggle);
+  document
+    .getElementById("results-panel-expand-btn")
+    ?.addEventListener("click", toggle);
+}
+
 function setViewMode(mode: "map" | "list") {
   const mapStage = document.getElementById("map-stage");
   const results = document.getElementById("results-panel");
@@ -565,10 +822,9 @@ function setViewMode(mode: "map" | "list") {
 
   if (mode === "list") {
     mapStage.classList.add("hidden");
-    results.classList.remove("lg:w-[500px]");
-    results.classList.add("lg:flex-1");
     split.classList.remove("lg:flex-row");
     split.classList.add("lg:flex-col");
+    syncResultsPanelChrome("list");
     btnList.className =
       "inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-bold transition-all " +
       active;
@@ -577,10 +833,9 @@ function setViewMode(mode: "map" | "list") {
       inactive;
   } else {
     mapStage.classList.remove("hidden");
-    results.classList.add("lg:w-[500px]");
-    results.classList.remove("lg:flex-1");
     split.classList.add("lg:flex-row");
     split.classList.remove("lg:flex-col");
+    syncResultsPanelChrome("map");
     btnMap.className =
       "inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-bold transition-all " +
       active;
@@ -596,8 +851,7 @@ function setViewMode(mode: "map" | "list") {
 function collectRows(): { name: string; address: string; phone: string }[] {
   return Array.from(document.querySelectorAll("tr.result-row")).map((row) => ({
     name: row.getAttribute("data-name") || "",
-    address:
-      row.getAttribute("data-address") || row.getAttribute("data-sub") || "",
+    address: row.getAttribute("data-address") || "",
     phone: row.getAttribute("data-phone") || "",
   }));
 }
@@ -639,11 +893,6 @@ function wireExports() {
       "maps-scraper-export.json",
       JSON.stringify(rows, null, 2),
       "application/json;charset=utf-8",
-    );
-  });
-  document.getElementById("export-xlsx-btn")?.addEventListener("click", () => {
-    window.alert(
-      "Export Excel membutuhkan library tambahan (mis. SheetJS). Gunakan CSV atau JSON untuk saat ini.",
     );
   });
 }
@@ -912,6 +1161,8 @@ function createStartScrapeHandler(apiBase: string) {
       return;
     }
 
+    lastScrapeQuery = { keyword: kw, location: loc };
+
     setViewMode("map");
     closeSidebarSearchSheetUi();
     try {
@@ -1057,7 +1308,9 @@ export function initScrapMapsDashboard(
   apiBase: string = scrapMapsApiBase,
 ): void {
   const runStart = () => void createStartScrapeHandler(apiBase)();
-  document.getElementById("start-scrape-btn")?.addEventListener("click", runStart);
+  document
+    .getElementById("start-scrape-btn")
+    ?.addEventListener("click", runStart);
   document
     .getElementById("start-scrape-btn-sheet")
     ?.addEventListener("click", runStart);
@@ -1078,6 +1331,8 @@ export function initScrapMapsDashboard(
   wireNotifications();
   wireModalsAndSettings();
   wireExports();
+  wireResultsPanelCollapse();
+  syncResultsPanelChrome("map");
   void (async () => {
     try {
       const m = await getMapMod();

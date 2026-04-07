@@ -7,20 +7,6 @@ import (
 	"github.com/chromedp/chromedp"
 )
 
-func resultLinksPoll(timeout time.Duration) chromedp.Action {
-	return chromedp.Poll(
-		`(function(){
-			var feed = document.querySelector('div[role="feed"]');
-			if (feed && feed.querySelector('a[href*="/maps/place/"]')) return true;
-			if (document.querySelectorAll('a[href*="/maps/place/"]').length > 0) return true;
-			return false;
-		})()`,
-		nil,
-		chromedp.WithPollingTimeout(timeout),
-		chromedp.WithPollingInterval(250*time.Millisecond),
-	)
-}
-
 // closeDetailPanelClicks mencoba kontrol Maps “kembali ke hasil” (ID/EN).
 func (g *GoogleMapsScraper) closeDetailPanelClicks(ctx context.Context) {
 	_ = chromedp.Run(ctx,
@@ -63,8 +49,7 @@ func feedReadyPoll() chromedp.Action {
 		`(function(){
 			var f = document.querySelector('div[role="feed"]');
 			if (!f) return false;
-			if (f.querySelector('a[href*="/maps/place/"]')) return true;
-			return document.querySelectorAll('a[href*="/maps/place/"]').length > 0;
+			return f.querySelectorAll('div[role="article"] a[href*="/maps/place/"]').length > 0;
 		})()`,
 		nil,
 		chromedp.WithPollingTimeout(18*time.Second),
@@ -73,33 +58,35 @@ func feedReadyPoll() chromedp.Action {
 }
 
 // restoreListAfterDetail menutup panel tempat dan menunggu feed bisa dipakai lagi.
-func (g *GoogleMapsScraper) restoreListAfterDetail(_ context.Context) {
-	workCtx, cancel := context.WithTimeout(g.ctx, 65*time.Second)
-	defer cancel()
-
-	g.closeDetailPanelClicks(workCtx)
-	if err := chromedp.Run(workCtx, feedReadyPoll()); err == nil {
-		time.Sleep(200 * time.Millisecond)
-		return
-	}
-	g.closeDetailPanelClicks(workCtx)
-	if err := chromedp.Run(workCtx, resultLinksPoll(8*time.Second), feedReadyPoll()); err == nil {
+func (g *GoogleMapsScraper) restoreListAfterDetail(ctx context.Context) {
+	g.closeDetailPanelClicks(ctx)
+	if err := chromedp.Run(ctx, feedReadyPoll()); err == nil {
 		time.Sleep(200 * time.Millisecond)
 		return
 	}
 	// NavigateBack sering keluar dari halaman hasil → kartu berikutnya gagal massal; pakai ulang URL pencarian.
 	if g.lastSearchURL != "" {
 		g.progressLine("⚠️  Daftar hasil belum muncul; muat ulang halaman pencarian...")
-		_ = chromedp.Run(workCtx,
+		_ = chromedp.Run(ctx,
 			chromedp.Navigate(g.lastSearchURL),
 			chromedp.WaitVisible("body", chromedp.ByQuery),
 			chromedp.Sleep(2*time.Second),
 		)
-		g.dismissBlockingUI(workCtx)
-		_ = chromedp.Run(workCtx,
-			resultLinksPoll(40*time.Second),
+		g.dismissBlockingUI(ctx)
+		_ = chromedp.Run(ctx,
+			chromedp.Poll(
+				`(function(){
+					var feed = document.querySelector('div[role="feed"]');
+					if (feed && feed.querySelector('a[href*="/maps/place/"]')) return true;
+					if (document.querySelectorAll('a[href*="/maps/place/"]').length > 0) return true;
+					return false;
+				})()`,
+				nil,
+				chromedp.WithPollingTimeout(40*time.Second),
+				chromedp.WithPollingInterval(300*time.Millisecond),
+			),
 		)
-		_ = chromedp.Run(workCtx, feedReadyPoll())
+		_ = chromedp.Run(ctx, feedReadyPoll())
 		time.Sleep(250 * time.Millisecond)
 		return
 	}

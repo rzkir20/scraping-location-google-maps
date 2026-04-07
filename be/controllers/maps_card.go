@@ -34,6 +34,10 @@ func (g *GoogleMapsScraper) getCardCount(ctx context.Context) int {
 }
 
 func (g *GoogleMapsScraper) processCard(index int, ctx context.Context) (*types.StoreInfo, error) {
+	g.mu.Lock()
+	prevCardName := strings.TrimSpace(g.lastCardName)
+	g.mu.Unlock()
+
 	clickJS := fmt.Sprintf(jsPlaceCardsFn+`
 		(function(){
 			var cards = __gmapsPlaceCards();
@@ -55,7 +59,7 @@ func (g *GoogleMapsScraper) processCard(index int, ctx context.Context) (*types.
 	panelCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	err := chromedp.Run(panelCtx,
 		chromedp.Poll(
-			`(function(){
+			fmt.Sprintf(`(function(){
 				var h = document.querySelector('h1.DUwDvf') ||
 					document.querySelector('[role="main"] h1.DUwDvf') ||
 					document.querySelector('h1[class*="DUwDvf"]');
@@ -63,8 +67,10 @@ func (g *GoogleMapsScraper) processCard(index int, ctx context.Context) (*types.
 				var tx = (h.textContent || '').trim();
 				if (!tx) return false;
 				if (/^bersponsor$/i.test(tx) || /^results$/i.test(tx) || /^hasil$/i.test(tx)) return false;
+				var prev = %q;
+				if (prev && tx.toLowerCase() === String(prev).toLowerCase()) return false;
 				return true;
-			})()`,
+			})()`, prevCardName),
 			nil,
 			chromedp.WithPollingTimeout(9*time.Second),
 			chromedp.WithPollingInterval(120*time.Millisecond),

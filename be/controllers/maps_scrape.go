@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -71,7 +70,17 @@ func (g *GoogleMapsScraper) ScrapeCoffeeShops(url string, maxResults int) ([]typ
 
 	g.progressLine("⏳ Waiting for search results to load...")
 	err = chromedp.Run(scrapeCtx,
-		resultLinksPoll(45*time.Second),
+		chromedp.Poll(
+			`(function(){
+				var feed = document.querySelector('div[role="feed"]');
+				if (feed && feed.querySelector('a[href*="/maps/place/"]')) return true;
+				if (document.querySelectorAll('a[href*="/maps/place/"]').length > 0) return true;
+				return false;
+			})()`,
+			nil,
+			chromedp.WithPollingTimeout(45*time.Second),
+			chromedp.WithPollingInterval(300*time.Millisecond),
+		),
 	)
 	if err != nil {
 		g.progressf("⚠️  Timeout waiting for result links: %v (lanjut mencoba...)", err)
@@ -96,7 +105,7 @@ func (g *GoogleMapsScraper) ScrapeCoffeeShops(url string, maxResults int) ([]typ
 				url: window.location.href,
 				title: document.title,
 				hasSidebar: !!document.querySelector('[role="main"]'),
-				hasResults: document.querySelectorAll('a[href*="/maps/place/"]').length > 0
+				hasResults: document.querySelectorAll('div[data-result-index]').length > 0
 			})
 		`, &pageInfo),
 	)
@@ -105,8 +114,6 @@ func (g *GoogleMapsScraper) ScrapeCoffeeShops(url string, maxResults int) ([]typ
 	stores := []types.StoreInfo{}
 	scrollAttempts := 0
 	maxScrollAttempts := 15
-	nextCardIndex := 0
-	consecutiveDeadlineErrors := 0
 
 	g.progressLine("🔍 Scrolling dan mengumpulkan data...")
 
@@ -128,49 +135,30 @@ func (g *GoogleMapsScraper) ScrapeCoffeeShops(url string, maxResults int) ([]typ
 			continue
 		}
 		g.progressf("🔎 %d kartu", cardCountInt)
-		if nextCardIndex >= cardCountInt {
-			scrollAttempts++
-			g.progressf("📊 %d/%d (scroll %d/%d)", len(stores), maxResults, scrollAttempts, maxScrollAttempts)
-			continue
-		}
 
-		for i := nextCardIndex; i < cardCountInt && len(stores) < maxResults; i++ {
-			cardCtx, cancel := context.WithTimeout(scrapeCtx, 22*time.Second)
+		for i := 0; i < cardCountInt && len(stores) < maxResults; i++ {
+			cardCtx, cancel := context.WithTimeout(scrapeCtx, 45*time.Second)
 			store, err := g.processCard(i, cardCtx)
 			cancel()
 			if err != nil {
 				summary.CardErrors++
 				g.progressf("❌ Kartu %d: %v", i, err)
-				if isDeadlineExceededErr(err) {
-					consecutiveDeadlineErrors++
-					if consecutiveDeadlineErrors >= 2 {
-						g.progressLine("⚠️  Timeout beruntun pada kartu; lanjut ke siklus scroll berikutnya.")
-						break
-					}
-				} else {
-					consecutiveDeadlineErrors = 0
-				}
 				continue
 			}
 			if store != nil {
-				consecutiveDeadlineErrors = 0
 				if store.HasWebsite {
 					summary.WithWebsite++
-					continue
 				}
 				if strings.TrimSpace(store.Phone) == "" {
 					summary.NoPhone++
-					continue
 				}
 				stores = append(stores, *store)
 				g.reportProgress(len(stores), maxResults)
 				g.progressf("✅ [%d] %s - %s", len(stores), store.Name, getPhoneDisplay(store.Phone))
 				continue
 			}
-			consecutiveDeadlineErrors = 0
 			summary.SkippedOther++
 		}
-		nextCardIndex = cardCountInt
 
 		scrollAttempts++
 		g.progressf("📊 %d/%d (scroll %d/%d)", len(stores), maxResults, scrollAttempts, maxScrollAttempts)
@@ -179,16 +167,6 @@ func (g *GoogleMapsScraper) ScrapeCoffeeShops(url string, maxResults int) ([]typ
 	summary.SavedNoWebsite = len(stores)
 	g.logScrapeSummary(summary)
 	return stores, summary, nil
-}
-
-func isDeadlineExceededErr(err error) bool {
-	if err == nil {
-		return false
-	}
-	if errors.Is(err, context.DeadlineExceeded) {
-		return true
-	}
-	return strings.Contains(strings.ToLower(err.Error()), "context deadline exceeded")
 }
 
 func (g *GoogleMapsScraper) logScrapeSummary(s ScrapeSummary) {

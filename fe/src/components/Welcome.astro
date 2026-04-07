@@ -170,8 +170,22 @@ const apiBase = scrapMapsApiBase;
 
     <div
       id="dashboard-split"
-      class="flex w-full flex-1 flex-col min-h-screen lg:flex-row"
+      class="relative flex w-full flex-1 flex-col min-h-screen lg:flex-row"
     >
+      <!-- Toggle di luar #map-stage (tetap bisa klik dari list); posisi disinkronkan di scrapmaps.service. -->
+      <div
+        id="map-list-view-toggle-group"
+        class="pointer-events-auto absolute right-3 top-3 z-30 flex rounded-lg border border-[#2d2d2d] bg-[#161616]/95 p-0.5 shadow-xl sm:right-6 sm:top-6 sm:p-1 lg:right-[calc(450px+1.5rem)]"
+      >
+        <Button variant="toggleOn" id="map-view-toggle" type="button">
+          <iconify-icon icon="lucide:map"></iconify-icon>
+          <span class="hidden sm:inline">Map</span>
+        </Button>
+        <Button variant="toggleOff" id="list-view-toggle" type="button">
+          <iconify-icon icon="lucide:list"></iconify-icon>
+          <span class="hidden sm:inline">List</span>
+        </Button>
+      </div>
       <!-- Map: parent flex-1 + min-h supaya kontainer punya tinggi untuk Leaflet -->
       <div
         id="map-stage"
@@ -234,7 +248,12 @@ const apiBase = scrapMapsApiBase;
                 <div class="flex items-center justify-end gap-1 text-[#FFD700]">
                   <iconify-icon icon="lucide:star" class="text-[#FFD700]"
                   ></iconify-icon>
-                  <p class="font-mono text-xl font-bold text-white">4.3</p>
+                  <p
+                    id="dash-sidebar-avg"
+                    class="font-mono text-xl font-bold text-white"
+                  >
+                    —
+                  </p>
                 </div>
               </div>
             </div>
@@ -250,27 +269,51 @@ const apiBase = scrapMapsApiBase;
                   <div
                     class="h-1.5 flex-1 overflow-hidden rounded-full bg-gray-800"
                   >
-                    <div class="h-full w-[45%] bg-[#FFD700]"></div>
+                    <div
+                      id="dash-sidebar-dist-fill-5"
+                      class="h-full w-0 bg-[#FFD700] transition-[width] duration-300"
+                    >
+                    </div>
                   </div>
-                  <span class="text-[10px] text-gray-500">45%</span>
+                  <span
+                    id="dash-sidebar-dist-label-5"
+                    class="w-9 shrink-0 text-right text-[10px] text-gray-500"
+                    >0</span
+                  >
                 </div>
                 <div class="flex items-center gap-2">
                   <span class="w-4 shrink-0 text-[10px] text-gray-400">4★</span>
                   <div
                     class="h-1.5 flex-1 overflow-hidden rounded-full bg-gray-800"
                   >
-                    <div class="h-full w-[35%] bg-[#0066cc]"></div>
+                    <div
+                      id="dash-sidebar-dist-fill-4"
+                      class="h-full w-0 bg-[#0066cc] transition-[width] duration-300"
+                    >
+                    </div>
                   </div>
-                  <span class="text-[10px] text-gray-500">35%</span>
+                  <span
+                    id="dash-sidebar-dist-label-4"
+                    class="w-9 shrink-0 text-right text-[10px] text-gray-500"
+                    >0</span
+                  >
                 </div>
                 <div class="flex items-center gap-2">
                   <span class="w-4 shrink-0 text-[10px] text-gray-400">3★</span>
                   <div
                     class="h-1.5 flex-1 overflow-hidden rounded-full bg-gray-800"
                   >
-                    <div class="h-full w-[15%] bg-[#FF8C00]"></div>
+                    <div
+                      id="dash-sidebar-dist-fill-3"
+                      class="h-full w-0 bg-[#FF8C00] transition-[width] duration-300"
+                    >
+                    </div>
                   </div>
-                  <span class="text-[10px] text-gray-500">15%</span>
+                  <span
+                    id="dash-sidebar-dist-label-3"
+                    class="w-9 shrink-0 text-right text-[10px] text-gray-500"
+                    >0</span
+                  >
                 </div>
               </div>
             </div>
@@ -344,19 +387,6 @@ const apiBase = scrapMapsApiBase;
         </div>
 
         <div
-          class="absolute right-3 top-3 z-30 flex rounded-lg border border-[#2d2d2d] bg-[#161616]/95 p-0.5 shadow-xl sm:right-6 sm:top-6 sm:p-1"
-        >
-          <Button variant="toggleOn" id="map-view-toggle" type="button">
-            <iconify-icon icon="lucide:map"></iconify-icon>
-            <span class="hidden sm:inline">Map</span>
-          </Button>
-          <Button variant="toggleOff" id="list-view-toggle" type="button">
-            <iconify-icon icon="lucide:list"></iconify-icon>
-            <span class="hidden sm:inline">List</span>
-          </Button>
-        </div>
-
-        <div
           class="absolute bottom-6 left-6 z-20 bg-[#161616]/95 backdrop-blur-md border border-[#2d2d2d] p-3 rounded-xl shadow-xl space-y-2 max-sm:hidden"
         >
           <Label variant="legend">Rating Legend</Label>
@@ -416,82 +446,129 @@ const apiBase = scrapMapsApiBase;
         </div>
       </div>
 
-      <!-- Results panel -->
+      <!-- Results panel (desktop: collapse ke strip sempit di samping peta) -->
       <div
         id="results-panel"
-        class="flex min-h-[min(20rem,42dvh)] w-full shrink-0 flex-col overflow-hidden bg-[#161616] h-full lg:min-h-0 lg:w-[300px] overflow-y-auto custom-scrollbar"
+        class="flex h-full min-h-[min(20rem,42dvh)] w-full shrink-0 flex-col overflow-hidden bg-[#161616] transition-[width] duration-300 ease-out lg:min-h-0 lg:w-[450px]"
       >
         <div
-          class="p-4 border-b border-[#2d2d2d] flex items-center justify-between gap-2"
+          id="results-panel-collapsed-strip"
+          class="hidden"
+          aria-hidden="true"
         >
-          <h3 id="results-heading" class="text-sm font-semibold">
-            Results (0)
-          </h3>
-          <div class="flex items-center gap-2">
-            <Button variant="iconSq" type="button" ariaLabel="Filter">
-              <iconify-icon icon="lucide:filter"></iconify-icon>
-            </Button>
-            <Button variant="iconSq" type="button" ariaLabel="Columns">
-              <iconify-icon icon="lucide:columns"></iconify-icon>
-            </Button>
-          </div>
+          <Button
+            variant="iconSq"
+            type="button"
+            id="results-panel-expand-btn"
+            ariaLabel="Tampilkan panel hasil"
+          >
+            <iconify-icon icon="lucide:chevron-left"></iconify-icon>
+          </Button>
         </div>
         <div
-          class="flex-1 overflow-x-auto overflow-y-auto custom-scrollbar min-h-0"
+          id="results-panel-expanded"
+          class="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
         >
-          <table
-            class="w-full text-left border-collapse min-w-[420px]"
-            id="results-table"
-          >
-            <thead
-              class="sticky top-0 bg-[#161616] z-10 border-b border-[#2d2d2d]"
-            >
-              <tr
-                class="text-[10px] font-semibold text-gray-500 uppercase tracking-widest"
-              >
-                <th class="px-4 py-3">Name</th>
-                <th class="px-4 py-3">Rating</th>
-                <th class="px-4 py-3">Phone</th>
-                <th class="px-4 py-3 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-[#2d2d2d]" id="results-tbody"></tbody>
-          </table>
-        </div>
-        <div class="p-4 border-t border-[#2d2d2d] bg-[#1a1a1a] shrink-0">
           <div
-            class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4"
+            class="flex min-w-0 shrink-0 items-center justify-between gap-2 border-b border-[#2d2d2d] p-4"
           >
-            <div class="flex flex-wrap gap-2">
-              <Button variant="outline" id="export-csv-btn" type="button">
-                <iconify-icon icon="lucide:file-text"></iconify-icon> CSV
+            <h3
+              id="results-heading"
+              class="min-w-0 flex-1 truncate text-sm font-semibold"
+            >
+              Results (0)
+            </h3>
+            <div class="flex shrink-0 items-center gap-2">
+              <Button
+                variant="iconSq"
+                type="button"
+                id="results-panel-collapse-toggle"
+                class="hidden lg:inline-flex"
+                ariaLabel="Sembunyikan panel hasil"
+                ariaExpanded={true}
+                ariaControls="results-panel-expanded"
+              >
+                <iconify-icon icon="lucide:chevron-right"></iconify-icon>
               </Button>
-              <Button variant="outline" id="export-json-btn" type="button">
-                <iconify-icon icon="lucide:code"></iconify-icon> JSON
+              <Button variant="iconSq" type="button" ariaLabel="Filter">
+                <iconify-icon icon="lucide:filter"></iconify-icon>
               </Button>
-              <Button variant="outline" id="export-xlsx-btn" type="button">
-                <iconify-icon icon="lucide:table"></iconify-icon> EXCEL
+              <Button variant="iconSq" type="button" ariaLabel="Columns">
+                <iconify-icon icon="lucide:columns"></iconify-icon>
               </Button>
             </div>
           </div>
           <div
-            class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs text-gray-500"
+            class="min-h-0 min-w-0 flex-1 overflow-x-auto overflow-y-auto overscroll-x-contain custom-scrollbar"
           >
-            <p id="results-pagination-text">Belum ada data</p>
-            <div class="flex gap-1">
-              <Button
-                variant="pagination"
-                type="button"
-                ariaLabel="Previous page"
+            <table
+              class="w-full min-w-[min(100%)] max-w-full table-fixed border-collapse text-left"
+              id="results-table"
+            >
+              <thead
+                class="sticky top-0 z-10 border-b border-[#2d2d2d] bg-[#161616]"
               >
-                <iconify-icon icon="lucide:chevron-left"></iconify-icon>
-              </Button>
-              <Button variant="paginationActive" type="button">1</Button>
-              <Button variant="pagination" type="button">2</Button>
-              <Button variant="pagination" type="button">3</Button>
-              <Button variant="pagination" type="button" ariaLabel="Next page">
-                <iconify-icon icon="lucide:chevron-right"></iconify-icon>
-              </Button>
+                <tr
+                  class="text-[10px] font-semibold tracking-widest text-gray-500 uppercase"
+                >
+                  <th class="w-full min-w-0 px-3 py-3 align-top sm:px-4">
+                    Name
+                  </th>
+                  <th class="w-full min-w-0 px-2 py-3 align-top sm:px-4">
+                    Rating
+                  </th>
+                  <th class="w-full min-w-0 px-3 py-3 align-top sm:px-4">
+                    Phone
+                  </th>
+                  <th class="w-full min-w-0 px-3 py-3 align-top sm:px-4"
+                    >Address</th
+                  >
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-[#2d2d2d]" id="results-tbody"
+              ></tbody>
+            </table>
+          </div>
+          <div
+            class="min-w-0 shrink-0 overflow-x-auto border-t border-[#2d2d2d] bg-[#1a1a1a] p-4"
+          >
+            <div
+              class="mb-4 flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
+            >
+              <div class="flex min-w-0 flex-wrap gap-2">
+                <Button variant="outline" id="export-csv-btn" type="button">
+                  <iconify-icon icon="lucide:file-text"></iconify-icon> CSV
+                </Button>
+                <Button variant="outline" id="export-json-btn" type="button">
+                  <iconify-icon icon="lucide:code"></iconify-icon> JSON
+                </Button>
+              </div>
+            </div>
+            <div
+              class="flex min-w-0 flex-col gap-2 text-xs text-gray-500 sm:flex-row sm:items-center sm:justify-between"
+            >
+              <p id="results-pagination-text" class="min-w-0 shrink sm:pr-2">
+                Belum ada data
+              </p>
+              <div class="flex shrink-0 gap-1">
+                <Button
+                  variant="pagination"
+                  type="button"
+                  ariaLabel="Previous page"
+                >
+                  <iconify-icon icon="lucide:chevron-left"></iconify-icon>
+                </Button>
+                <Button variant="paginationActive" type="button">1</Button>
+                <Button variant="pagination" type="button">2</Button>
+                <Button variant="pagination" type="button">3</Button>
+                <Button
+                  variant="pagination"
+                  type="button"
+                  ariaLabel="Next page"
+                >
+                  <iconify-icon icon="lucide:chevron-right"></iconify-icon>
+                </Button>
+              </div>
             </div>
           </div>
         </div>
@@ -526,19 +603,31 @@ const apiBase = scrapMapsApiBase;
             </div>
             <div class="grid grid-cols-2 gap-4 pt-2 border-t border-[#2d2d2d]">
               <div>
-                <span class="block text-lg font-bold text-white"
-                  >4.6<span class="text-xs text-gray-500">/5</span></span
-                >
+                <span class="block text-lg font-bold text-white">
+                  <span id="dash-analytics-avg">—</span><span
+                    class="text-xs text-gray-500">/5</span
+                  >
+                </span>
                 <span class="text-[9px] text-gray-500 uppercase font-bold"
                   >Avg Rating</span
                 >
               </div>
-              <div>
-                <span class="block text-lg font-bold text-[#0066cc] truncate"
-                  >Dining</span
+              <div class="min-w-0">
+                <span
+                  id="dash-analytics-keyword"
+                  class="block truncate text-base font-bold text-[#0066cc] sm:text-lg"
+                  title="">—</span
                 >
                 <span class="text-[9px] text-gray-500 uppercase font-bold"
-                  >Top Category</span
+                  >Keyword</span
+                >
+                <span
+                  id="dash-analytics-location"
+                  class="mt-1 block truncate text-xs font-medium text-gray-400"
+                  title="">—</span
+                >
+                <span class="text-[9px] text-gray-500 uppercase font-bold"
+                  >Location</span
                 >
               </div>
             </div>
@@ -555,61 +644,28 @@ const apiBase = scrapMapsApiBase;
             ></iconify-icon>
           </div>
           <div class="space-y-2">
-            <div class="flex items-center gap-2">
-              <span class="text-[10px] w-4 text-gray-500 font-bold">5★</span>
-              <div
-                class="flex-1 h-1.5 bg-gray-800 rounded-full overflow-hidden"
-              >
-                <div class="h-full bg-[#0066cc] w-[45%]"></div>
-              </div>
-              <span class="text-[10px] text-gray-400 font-mono w-6 text-right"
-                >456</span
-              >
-            </div>
-            <div class="flex items-center gap-2">
-              <span class="text-[10px] w-4 text-gray-500 font-bold">4★</span>
-              <div
-                class="flex-1 h-1.5 bg-gray-800 rounded-full overflow-hidden"
-              >
-                <div class="h-full bg-[#0066cc]/80 w-[38%]"></div>
-              </div>
-              <span class="text-[10px] text-gray-400 font-mono w-6 text-right"
-                >389</span
-              >
-            </div>
-            <div class="flex items-center gap-2">
-              <span class="text-[10px] w-4 text-gray-500 font-bold">3★</span>
-              <div
-                class="flex-1 h-1.5 bg-gray-800 rounded-full overflow-hidden"
-              >
-                <div class="h-full bg-[#0066cc]/60 w-[25%]"></div>
-              </div>
-              <span class="text-[10px] text-gray-400 font-mono w-6 text-right"
-                >254</span
-              >
-            </div>
-            <div class="flex items-center gap-2">
-              <span class="text-[10px] w-4 text-gray-500 font-bold">2★</span>
-              <div
-                class="flex-1 h-1.5 bg-gray-800 rounded-full overflow-hidden"
-              >
-                <div class="h-full bg-[#0066cc]/40 w-[10%]"></div>
-              </div>
-              <span class="text-[10px] text-gray-400 font-mono w-6 text-right"
-                >98</span
-              >
-            </div>
-            <div class="flex items-center gap-2">
-              <span class="text-[10px] w-4 text-gray-500 font-bold">1★</span>
-              <div
-                class="flex-1 h-1.5 bg-gray-800 rounded-full overflow-hidden"
-              >
-                <div class="h-full bg-[#0066cc]/20 w-[5%]"></div>
-              </div>
-              <span class="text-[10px] text-gray-400 font-mono w-6 text-right"
-                >51</span
-              >
-            </div>
+            {
+              [5, 4, 3, 2, 1].map((star) => (
+                <div class="flex items-center gap-2">
+                  <span class="text-[10px] w-4 font-bold text-gray-500">
+                    {star}★
+                  </span>
+                  <div class="flex-1 h-1.5 overflow-hidden rounded-full bg-gray-800">
+                    <div
+                      id={`analytics-dist-fill-${star}`}
+                      class="h-full w-0 bg-[#0066cc] transition-[width] duration-300"
+                      style="width: 0%"
+                    />
+                  </div>
+                  <span
+                    id={`analytics-dist-count-${star}`}
+                    class="w-8 shrink-0 text-right font-mono text-[10px] text-gray-400"
+                  >
+                    0
+                  </span>
+                </div>
+              ))
+            }
           </div>
         </div>
         <div
@@ -624,36 +680,40 @@ const apiBase = scrapMapsApiBase;
           </div>
           <div class="grid grid-cols-2 gap-x-4 gap-y-4">
             <div>
-              <span class="block text-xl font-bold text-white font-mono"
-                >5,234</span
+              <span
+                id="analytics-stat-phone"
+                class="block font-mono text-xl font-bold text-white">—</span
               >
               <span class="text-[9px] text-gray-500 uppercase font-bold"
-                >Reviews</span
+                >With phone</span
               >
             </div>
             <div>
-              <span class="block text-xl font-bold text-white font-mono"
-                >892</span
+              <span
+                id="analytics-stat-address"
+                class="block font-mono text-xl font-bold text-white">—</span
               >
               <span class="text-[9px] text-gray-500 uppercase font-bold"
-                >Verified</span
+                >With address</span
               >
             </div>
             <div>
-              <span class="block text-xl font-bold text-white font-mono"
-                >78%</span
+              <span
+                id="analytics-stat-rated"
+                class="block font-mono text-xl font-bold text-white">—</span
               >
               <span class="text-[9px] text-gray-500 uppercase font-bold"
-                >Response</span
+                >Rated</span
               >
             </div>
-            <div class="flex items-end">
-              <div
-                class="flex items-center gap-1 text-[9px] text-green-500 font-bold bg-green-500/10 px-2 py-1 rounded-md"
+            <div>
+              <span
+                id="analytics-stat-high"
+                class="block font-mono text-xl font-bold text-white">—</span
               >
-                <iconify-icon icon="lucide:trending-up"></iconify-icon>
-                <span>+12.4%</span>
-              </div>
+              <span class="text-[9px] text-gray-500 uppercase font-bold"
+                >Rated ≥4</span
+              >
             </div>
           </div>
         </div>
@@ -667,65 +727,10 @@ const apiBase = scrapMapsApiBase;
               class="text-gray-600 group-hover:text-[#0066cc] transition-colors"
             ></iconify-icon>
           </div>
-          <div class="space-y-2">
-            <div
-              class="flex items-center justify-between bg-[#1f1f1f] p-2 rounded-xl border border-[#2d2d2d] hover:border-[#0066cc]/30 transition-colors"
-            >
-              <div class="min-w-0">
-                <p class="text-xs font-bold text-white truncate">
-                  Green Leaf Cafe
-                </p>
-                <div class="flex gap-0.5 text-[#FFD700] text-[10px]">
-                  <iconify-icon icon="lucide:star"></iconify-icon>
-                  <iconify-icon icon="lucide:star"></iconify-icon>
-                  <iconify-icon icon="lucide:star"></iconify-icon>
-                  <iconify-icon icon="lucide:star"></iconify-icon>
-                  <iconify-icon icon="lucide:star"></iconify-icon>
-                </div>
-              </div>
-              <span
-                class="text-xs font-bold font-mono bg-[#0066cc]/20 text-[#0066cc] px-1.5 py-0.5 rounded"
-                >4.9</span
-              >
-            </div>
-            <div
-              class="flex items-center justify-between bg-[#1f1f1f] p-2 rounded-xl border border-[#2d2d2d] hover:border-[#0066cc]/30 transition-colors"
-            >
-              <div class="min-w-0">
-                <p class="text-xs font-bold text-white truncate">Metro Plaza</p>
-                <div class="flex gap-0.5 text-[#FFD700] text-[10px]">
-                  <iconify-icon icon="lucide:star"></iconify-icon>
-                  <iconify-icon icon="lucide:star"></iconify-icon>
-                  <iconify-icon icon="lucide:star"></iconify-icon>
-                  <iconify-icon icon="lucide:star"></iconify-icon>
-                  <iconify-icon icon="lucide:star"></iconify-icon>
-                </div>
-              </div>
-              <span
-                class="text-xs font-bold font-mono bg-[#0066cc]/20 text-[#0066cc] px-1.5 py-0.5 rounded"
-                >4.9</span
-              >
-            </div>
-            <div
-              class="flex items-center justify-between bg-[#1f1f1f] p-2 rounded-xl border border-[#2d2d2d] hover:border-[#0066cc]/30 transition-colors"
-            >
-              <div class="min-w-0">
-                <p class="text-xs font-bold text-white truncate">
-                  Downtown Dental
-                </p>
-                <div class="flex gap-0.5 text-[#FFD700] text-[10px]">
-                  <iconify-icon icon="lucide:star"></iconify-icon>
-                  <iconify-icon icon="lucide:star"></iconify-icon>
-                  <iconify-icon icon="lucide:star"></iconify-icon>
-                  <iconify-icon icon="lucide:star"></iconify-icon>
-                  <iconify-icon icon="lucide:star-half"></iconify-icon>
-                </div>
-              </div>
-              <span
-                class="text-xs font-bold font-mono bg-[#0066cc]/20 text-[#0066cc] px-1.5 py-0.5 rounded"
-                >4.8</span
-              >
-            </div>
+          <div id="analytics-top-rated" class="space-y-2">
+            <p class="px-1 text-xs text-gray-500">
+              Data muncul setelah scraping selesai.
+            </p>
           </div>
         </div>
       </div>
