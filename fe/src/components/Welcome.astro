@@ -1,71 +1,50 @@
 ---
-import Dialog from "./ui/Dialog.astro";
-
-import Input from "./ui/Input.astro";
-
 import Button from "./ui/Button.astro";
 
+import DialogDesktop from "./DialogDesktop.astro";
+
+import DialogSocial from "./DialogSocial.astro";
+
+import DialogSettings from "./DialogSettings.astro";
+
 import Label from "./ui/Label.astro";
+
+import Sheets from "./ui/Sheets.astro";
+
+import SidebarSearchForm from "./SidebarSearchForm.astro";
 
 import { scrapMapsApiBase } from "../lib/config";
 
 const apiBase = scrapMapsApiBase;
 ---
 
-<div class="flex h-screen w-full overflow-hidden bg-[#0f0f0f]">
-  <!-- Sidebar -->
+<div
+  class="flex h-screen min-h-0 w-full flex-col overflow-hidden bg-[#0f0f0f] lg:flex-row"
+>
+  <!-- Sidebar desktop (≥ lg); mobile pakai Sheets + hamburger -->
   <aside
-    class="w-[min(100%,320px)] sm:w-[320px] h-full bg-[#161616] border-r border-[#2d2d2d] flex flex-col shrink-0 z-30 max-sm:max-h-[40vh] max-sm:border-b max-sm:border-r-0"
+    class="z-30 hidden h-full w-[320px] shrink-0 flex-col border-r border-[#2d2d2d] bg-[#161616] lg:flex"
   >
-    <div class="p-6 border-b border-[#2d2d2d] flex items-center gap-3">
+    <div
+      class="flex shrink-0 items-center gap-3 border-b border-[#2d2d2d] p-4 sm:p-6"
+    >
       <div
-        class="w-8 h-8 bg-[#0066cc] rounded-lg flex items-center justify-center"
+        class="flex h-8 w-8 items-center justify-center rounded-lg bg-[#0066cc]"
       >
-        <iconify-icon icon="lucide:map-pin" class="text-white text-lg"
+        <iconify-icon icon="lucide:map-pin" class="text-lg text-white"
         ></iconify-icon>
       </div>
-      <span class="text-lg font-semibold tracking-tight">MapsScraper Pro</span>
+      <span
+        class="min-w-0 truncate text-base font-semibold tracking-tight sm:text-lg"
+        >MapsScraper Pro</span
+      >
     </div>
-    <div class="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-8">
-      <section>
-        <Label variant="section">Basic Search</Label>
-        <div class="space-y-4">
-          <Input
-            variant="field"
-            id="input-keyword"
-            type="text"
-            placeholder="Search business/keywords..."
-            icon="lucide:search"
-          />
-          <Input
-            variant="field"
-            id="input-location"
-            type="text"
-            placeholder="Location (e.g. Bandung, Jakarta)"
-            icon="lucide:navigation"
-          />
-          <Input
-            variant="field"
-            id="input-max-results"
-            type="number"
-            min={1}
-            max={500}
-            value={10}
-            placeholder="10"
-            title="Target listing (tanpa website, wajib ada nomor telepon)"
-            icon="lucide:hash"
-          />
-          <p class="text-[10px] text-gray-500 leading-relaxed">
-            Target = jumlah listing tanpa website + ada nomor (sama seperti
-            aplikasi Go). Dari FE, backend jalan <strong class="text-gray-400"
-              >headless</strong
-            > (tanpa jendela Chrome). Progres tampil di
-            <strong class="text-gray-400">Live tracking</strong> + log.
-          </p>
-        </div>
-      </section>
+    <div
+      class="min-h-0 flex-1 space-y-8 overflow-y-auto p-4 custom-scrollbar sm:p-6"
+    >
+      <SidebarSearchForm idSuffix="" />
     </div>
-    <div class="p-6 border-t border-[#2d2d2d]">
+    <div class="shrink-0 border-t border-[#2d2d2d] p-4 sm:p-6">
       <Button variant="primary" id="start-scrape-btn">
         <iconify-icon icon="lucide:play-circle"></iconify-icon>
         Start Scraping
@@ -74,15 +53,25 @@ const apiBase = scrapMapsApiBase;
   </aside>
 
   <main
-    class="flex-1 flex flex-col min-w-0 min-h-0 overflow-y-auto custom-scrollbar relative"
+    class="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto custom-scrollbar"
   >
     <header
-      class="h-16 bg-[#161616] border-b border-[#2d2d2d] flex items-center justify-between px-4 sm:px-6 shrink-0 gap-2"
+      class="flex min-h-16 shrink-0 flex-wrap items-center justify-between gap-x-2 gap-y-2 border-b border-[#2d2d2d] bg-[#161616] px-3 py-2.5 sm:h-16 sm:min-h-0 sm:flex-nowrap sm:px-6 sm:py-0"
     >
-      <div class="flex items-center gap-2 sm:gap-4 min-w-0 flex-wrap">
+      <div class="flex min-w-0 flex-1 flex-wrap items-center gap-2 sm:gap-4">
+        <Button
+          variant="ghost"
+          id="sidebar-menu-trigger"
+          class="lg:hidden"
+          ariaLabel="Buka pencarian"
+          ariaExpanded={false}
+          ariaControls="sidebar-search-sheet"
+        >
+          <iconify-icon icon="lucide:menu" class="text-xl"></iconify-icon>
+        </Button>
         <div
           id="header-status-pill"
-          class="flex items-center gap-2 px-3 py-1 rounded-full border text-xs font-medium bg-amber-500/10 border-amber-500/20 text-amber-400"
+          class="flex max-w-full min-w-0 items-center gap-2 rounded-full border px-2.5 py-1 text-[11px] font-medium sm:px-3 sm:text-xs bg-amber-500/10 border-amber-500/20 text-amber-400"
         >
           <span
             id="header-status-dot"
@@ -93,9 +82,9 @@ const apiBase = scrapMapsApiBase;
         </div>
         <div class="h-4 w-px bg-[#2d2d2d] hidden sm:block"></div>
         <div
-          class="text-sm text-gray-400 hidden md:flex flex-wrap items-center gap-x-3 gap-y-1 min-w-0"
+          class="hidden min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-sm text-gray-400 md:flex lg:max-w-[min(100%,24rem)]"
         >
-          <span class="truncate max-w-[min(100%,14rem)] lg:max-w-xs">
+          <span class="max-w-[min(100%,14rem)] truncate lg:max-w-xs">
             <span class="text-white font-medium">API:</span>
             <span id="header-api-url" class="font-mono text-[11px]"
               >{apiBase}</span
@@ -111,7 +100,7 @@ const apiBase = scrapMapsApiBase;
           </span>
         </div>
       </div>
-      <div class="flex items-center gap-0.5 sm:gap-2 shrink-0">
+      <div class="flex shrink-0 items-center gap-0.5 sm:gap-2">
         <Button
           variant="soft"
           id="download-app-trigger"
@@ -141,7 +130,7 @@ const apiBase = scrapMapsApiBase;
             id="notification-panel"
             role="region"
             aria-label="Daftar notifikasi"
-            class="absolute top-full right-0 mt-2 w-[min(calc(100vw-2rem),20rem)] rounded-xl border border-[#2d2d2d] bg-[#161616] shadow-2xl z-[90] hidden max-h-[min(70vh,22rem)] overflow-hidden"
+            class="absolute top-full right-0 mt-2 w-[min(calc(100vw-2rem),20rem)] rounded-xl border border-[#2d2d2d] bg-[#161616] shadow-2xl z-90 hidden max-h-[min(70vh,22rem)] overflow-hidden"
           >
             <div
               class="px-4 py-3 border-b border-[#2d2d2d] flex items-center justify-between gap-2 shrink-0"
@@ -157,7 +146,7 @@ const apiBase = scrapMapsApiBase;
             </div>
             <div
               id="notification-list"
-              class="overflow-y-auto custom-scrollbar flex-1 p-2 min-h-[4rem]"
+              class="overflow-y-auto custom-scrollbar flex-1 p-2 min-h-16"
             >
             </div>
           </div>
@@ -181,12 +170,12 @@ const apiBase = scrapMapsApiBase;
 
     <div
       id="dashboard-split"
-      class="flex flex-col lg:flex-row h-[min(600px,calc(100vh-64px))] lg:h-[calc(100vh-64px)] min-h-[480px] shrink-0"
+      class="flex w-full flex-1 flex-col min-h-screen lg:flex-row"
     >
-      <!-- Map stage -->
+      <!-- Map: parent flex-1 + min-h supaya kontainer punya tinggi untuk Leaflet -->
       <div
         id="map-stage"
-        class="flex-1 relative bg-[#1a1a1a] overflow-hidden border-b lg:border-b-0 lg:border-r border-[#2d2d2d] shadow-inner min-h-[280px] lg:min-h-0"
+        class="relative flex-1 min-h-[80dvh] overflow-hidden border-b border-[#2d2d2d] bg-[#1a1a1a] shadow-inner sm:min-h-[52dvh] lg:min-h-0 lg:border-b-0 lg:border-r"
       >
         <div
           class="absolute inset-0 opacity-10 pointer-events-none"
@@ -200,13 +189,13 @@ const apiBase = scrapMapsApiBase;
 
         <div
           id="map-preview"
-          class="absolute inset-0 z-[5] min-h-[200px]"
+          class="absolute inset-0 z-5 size-full min-h-0"
           aria-label="Peta preview"
         >
         </div>
         <div
           id="map-idle-banner"
-          class="pointer-events-none absolute bottom-14 left-1/2 z-[15] max-w-[min(90%,420px)] -translate-x-1/2 rounded-lg border border-[#2d2d2d] bg-[#161616]/95 px-4 py-2 text-center text-[11px] text-gray-400 shadow-lg backdrop-blur-sm"
+          class="pointer-events-none absolute bottom-20 left-1/2 z-15 max-w-[min(92vw,420px)] -translate-x-1/2 rounded-lg border border-[#2d2d2d] bg-[#161616]/95 px-3 py-2 text-center text-[10px] text-gray-400 shadow-lg backdrop-blur-sm sm:bottom-14 sm:px-4 sm:text-[11px]"
         >
           <span class="font-semibold text-[#0066cc]">Peta preview</span>
           · OSM + Carto (gelap). Titik
@@ -217,69 +206,69 @@ const apiBase = scrapMapsApiBase;
         </div>
 
         <div
-          class="absolute top-6 left-6 z-20 w-72 max-w-[calc(100%-3rem)] space-y-3"
+          class="absolute left-3 top-14 z-20 w-[min(15rem,calc(100vw-4.5rem))] max-h-[min(62vh,28rem)] space-y-2 overflow-y-auto overflow-x-hidden [scrollbar-width:thin] sm:left-6 sm:top-6 sm:max-h-none sm:w-60 sm:max-w-[min(15rem,calc(100%-7rem))] sm:space-y-3 sm:overflow-visible custom-scrollbar"
         >
           <div
-            class="bg-[#161616]/95 backdrop-blur-md border border-[#2d2d2d] p-4 rounded-xl shadow-2xl"
+            class="rounded-xl border border-[#2d2d2d] bg-[#161616]/95 p-3 shadow-2xl backdrop-blur-md sm:p-4"
           >
-            <div class="flex items-center justify-between mb-4">
-              <div>
+            <div class="mb-4 flex items-center justify-between">
+              <div class="min-w-0">
                 <p
-                  class="text-[10px] text-gray-500 uppercase tracking-widest font-bold"
+                  class="text-[10px] font-bold uppercase tracking-widest text-gray-500"
                 >
                   Total Scraped
                 </p>
                 <p
                   id="dash-total-scraped"
-                  class="text-2xl font-bold font-mono text-white"
+                  class="font-mono text-2xl font-bold text-white"
                 >
                   —
                 </p>
               </div>
-              <div class="text-right">
+              <div class="shrink-0 text-right">
                 <p
-                  class="text-[10px] text-gray-500 uppercase tracking-widest font-bold"
+                  class="text-[10px] font-bold uppercase tracking-widest text-gray-500"
                 >
                   Avg Rating
                 </p>
-                <div class="flex items-center gap-1 text-[#FFD700]">
+                <div class="flex items-center justify-end gap-1 text-[#FFD700]">
                   <iconify-icon icon="lucide:star" class="text-[#FFD700]"
                   ></iconify-icon>
-                  <p class="text-xl font-bold font-mono text-white">4.3</p>
+                  <p class="font-mono text-xl font-bold text-white">4.3</p>
                 </div>
               </div>
             </div>
             <div class="space-y-2">
               <p
-                class="text-[10px] text-gray-500 uppercase tracking-widest font-bold"
+                class="text-[10px] font-bold uppercase tracking-widest text-gray-500"
               >
                 Rating Distribution
               </p>
               <div class="space-y-1.5">
                 <div class="flex items-center gap-2">
-                  <span class="text-[10px] w-4 text-gray-400">5★</span>
+                  <span class="w-4 shrink-0 text-[10px] text-gray-400">5★</span>
                   <div
-                    class="flex-1 h-1.5 bg-gray-800 rounded-full overflow-hidden"
+                    class="h-1.5 flex-1 overflow-hidden rounded-full bg-gray-800"
                   >
-                    <div class="h-full bg-[#FFD700] w-[45%]"></div>
+                    <div class="h-full w-[45%] bg-[#FFD700]"></div>
                   </div>
                   <span class="text-[10px] text-gray-500">45%</span>
                 </div>
                 <div class="flex items-center gap-2">
-                  <span class="text-[10px] w-4 text-gray-400">4★</span>
+                  <span class="w-4 shrink-0 text-[10px] text-gray-400">4★</span>
                   <div
-                    class="flex-1 h-1.5 bg-gray-800 rounded-full overflow-hidden"
+                    class="h-1.5 flex-1 overflow-hidden rounded-full bg-gray-800"
                   >
-                    <div class="h-full bg-[#0066cc] w-[35%]"></div>
+                    <div class="h-full w-[35%] bg-[#0066cc]"></div>
                   </div>
                   <span class="text-[10px] text-gray-500">35%</span>
                 </div>
                 <div class="flex items-center gap-2">
-                  <span class="text-[10px] w-4 text-gray-400">3★</span>
+                  <span class="w-4 shrink-0 text-[10px] text-gray-400">3★</span>
                   <div
-                    class="flex-1 h-1.5 bg-gray-800 rounded-full overflow-hidden"
+                    class="h-1.5 flex-1 overflow-hidden rounded-full bg-gray-800"
                   >
-                    <div class="h-full bg-[#FF8C00] w-[15%]"></div>
+                    <div class="h-full w-[15%] bg-[#FF8C00]"></div>
                   </div>
                   <span class="text-[10px] text-gray-500">15%</span>
                 </div>
@@ -287,75 +276,83 @@ const apiBase = scrapMapsApiBase;
             </div>
           </div>
           <div
-            class="bg-[#161616]/95 backdrop-blur-md border border-[#2d2d2d] p-3 rounded-xl flex flex-col gap-2"
+            class="flex flex-col gap-2 rounded-xl border border-[#2d2d2d] bg-[#161616]/95 p-3 backdrop-blur-md"
           >
             <div class="flex items-center justify-between gap-2">
-              <div class="flex items-center gap-2 min-w-0">
+              <div class="flex min-w-0 items-center gap-2">
                 <div
                   id="live-progress-dot"
-                  class="w-2 h-2 rounded-full bg-gray-500 shrink-0"
+                  class="h-2 w-2 shrink-0 rounded-full bg-gray-500"
                 >
                 </div>
                 <span
-                  class="text-xs text-gray-400 uppercase tracking-widest font-bold truncate"
+                  class="truncate text-xs font-bold uppercase tracking-widest text-gray-400"
                   >Live tracking</span
                 >
               </div>
               <span
                 id="live-progress-label"
-                class="text-[10px] font-mono text-[#0066cc] shrink-0"
+                class="shrink-0 font-mono text-[10px] text-[#0066cc]"
                 >0 / 0</span
               >
             </div>
-            <div class="w-full h-1.5 bg-gray-800 rounded-full overflow-hidden">
+            <div class="h-1.5 w-full overflow-hidden rounded-full bg-gray-800">
               <div
                 id="live-progress-fill"
-                class="h-full bg-[#0066cc] rounded-full transition-[width] duration-300 ease-out"
+                class="h-full rounded-full bg-[#0066cc] transition-[width] duration-300 ease-out"
                 style="width: 0%"
               >
               </div>
             </div>
           </div>
           <div
-            class="bg-[#161616]/95 backdrop-blur-md border border-[#2d2d2d] p-3 rounded-xl"
+            class="rounded-xl border border-[#2d2d2d] bg-[#161616]/95 p-3 backdrop-blur-md"
           >
             <Label variant="caption">Current Card</Label>
             <div class="mt-2 space-y-1">
-              <p id="live-card-name" class="text-xs font-semibold text-white truncate">
+              <p
+                id="live-card-name"
+                class="truncate text-xs font-semibold text-white sm:whitespace-normal sm:wrap-break-word"
+              >
                 Menunggu kartu...
               </p>
               <p class="text-[10px] text-gray-500">
                 Rating: <span id="live-card-rating">-</span>
               </p>
               <p id="live-card-category" class="text-[10px] text-gray-500">-</p>
-              <p id="live-card-address" class="text-[10px] text-gray-400 leading-relaxed">
+              <p
+                id="live-card-address"
+                class="text-[10px] leading-relaxed text-gray-400 wrap-break-word"
+              >
                 -
               </p>
               <p class="text-[10px] text-gray-500">
                 <span id="live-card-opening">-</span>
                 <span class="text-gray-600"> • </span>
-                <span id="live-card-phone">-</span>
+                <span id="live-card-phone" class="font-mono">-</span>
               </p>
             </div>
           </div>
           <div
-            class="bg-[#161616]/95 backdrop-blur-md border border-[#2d2d2d] p-3 rounded-xl max-h-40 overflow-y-auto custom-scrollbar"
+            class="max-h-40 overflow-y-auto rounded-xl border border-[#2d2d2d] bg-[#161616]/95 p-3 backdrop-blur-md custom-scrollbar"
           >
             <Label variant="caption">Log scraping</Label>
             <pre
               id="scrape-log"
-              class="text-[10px] text-gray-400 font-mono whitespace-pre-wrap break-words m-0 leading-relaxed">Menunggu job…</pre>
+              class="m-0 text-[10px] font-mono leading-relaxed text-gray-400 wrap-break-word whitespace-pre-wrap">Menunggu job…</pre>
           </div>
         </div>
 
         <div
-          class="absolute top-6 right-6 z-20 flex bg-[#161616]/95 border border-[#2d2d2d] rounded-lg p-1 shadow-xl"
+          class="absolute right-3 top-3 z-30 flex rounded-lg border border-[#2d2d2d] bg-[#161616]/95 p-0.5 shadow-xl sm:right-6 sm:top-6 sm:p-1"
         >
           <Button variant="toggleOn" id="map-view-toggle" type="button">
-            <iconify-icon icon="lucide:map"></iconify-icon> Map
+            <iconify-icon icon="lucide:map"></iconify-icon>
+            <span class="hidden sm:inline">Map</span>
           </Button>
           <Button variant="toggleOff" id="list-view-toggle" type="button">
-            <iconify-icon icon="lucide:list"></iconify-icon> List
+            <iconify-icon icon="lucide:list"></iconify-icon>
+            <span class="hidden sm:inline">List</span>
           </Button>
         </div>
 
@@ -387,7 +384,9 @@ const apiBase = scrapMapsApiBase;
           </div>
         </div>
 
-        <div class="absolute bottom-6 right-6 z-20 flex flex-col gap-2">
+        <div
+          class="absolute bottom-4 right-4 z-20 flex flex-col gap-1.5 sm:bottom-6 sm:right-6 sm:gap-2"
+        >
           <Button
             variant="mapTool"
             id="map-zoom-in"
@@ -420,7 +419,7 @@ const apiBase = scrapMapsApiBase;
       <!-- Results panel -->
       <div
         id="results-panel"
-        class="w-full lg:w-[500px] h-full bg-[#161616] flex flex-col shrink-0 overflow-hidden min-h-[320px]"
+        class="flex min-h-[min(20rem,42dvh)] w-full shrink-0 flex-col overflow-hidden bg-[#161616] h-full lg:min-h-0 lg:w-[300px] overflow-y-auto custom-scrollbar"
       >
         <div
           class="p-4 border-b border-[#2d2d2d] flex items-center justify-between gap-2"
@@ -501,7 +500,7 @@ const apiBase = scrapMapsApiBase;
 
     <!-- Analytics strip -->
     <section
-      class="p-6 bg-[#0f0f0f] border-t border-[#2d2d2d] shrink-0 overflow-x-auto custom-scrollbar"
+      class="shrink-0 overflow-x-auto border-t border-[#2d2d2d] bg-[#0f0f0f] p-4 pb-[max(1rem,env(safe-area-inset-bottom))] custom-scrollbar sm:p-6"
     >
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 min-w-0">
         <div
@@ -732,404 +731,41 @@ const apiBase = scrapMapsApiBase;
       </div>
     </section>
   </main>
-</div>
 
-<!-- Download desktop (placeholder — tautan rilis bisa disetel nanti) -->
-<Dialog
-  id="download-modal"
-  zIndex={10000}
-  panelClass="max-w-4xl max-h-[95vh] overflow-y-auto custom-scrollbar p-6 sm:p-8"
->
-  <div class="mb-8 sm:mb-10">
-    <div class="flex items-center gap-4 mb-2">
+  <!-- Drawer pencarian (hamburger, &lt; lg) -->
+  <Sheets id="sidebar-search-sheet" zIndex={960}>
+    <div class="flex h-full min-h-0 flex-col pt-11">
       <div
-        class="w-12 h-12 bg-[#0066cc] rounded-xl flex items-center justify-center shrink-0"
+        class="flex shrink-0 items-center gap-3 border-b border-[#2d2d2d] px-5 pb-4 pt-1 sm:px-6"
       >
-        <iconify-icon icon="lucide:monitor" class="text-white text-2xl"
-        ></iconify-icon>
-      </div>
-      <div class="min-w-0">
-        <h2 class="text-xl sm:text-2xl font-bold text-white">
-          Download MapsScraper Pro Desktop
-        </h2>
-        <p class="text-gray-500 text-sm">
-          Lead generation penuh di desktop (rilis menyusul)
-        </p>
-      </div>
-    </div>
-  </div>
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10 sm:mb-12">
-    <div
-      class="bg-[#1f1f1f] border border-[#2d2d2d] rounded-2xl p-6 hover:border-[#0066cc]/50 transition-all flex flex-col items-center text-center"
-    >
-      <iconify-icon
-        icon="mdi:microsoft-windows"
-        class="text-5xl text-[#0066cc] mb-4"></iconify-icon>
-      <h3 class="text-lg font-bold text-white mb-1">Windows</h3>
-      <p
-        class="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-4"
-      >
-        v2.1.0 • 85 MB
-      </p>
-      <Button variant="downloadPrimary" type="button">
-        <iconify-icon icon="lucide:download"></iconify-icon> Download .exe
-      </Button>
-    </div>
-    <div
-      class="bg-[#1f1f1f] border border-[#2d2d2d] rounded-2xl p-6 hover:border-[#0066cc]/50 transition-all flex flex-col items-center text-center"
-    >
-      <iconify-icon icon="mdi:apple" class="text-5xl text-gray-400 mb-4"
-      ></iconify-icon>
-      <h3 class="text-lg font-bold text-white mb-1">macOS</h3>
-      <p
-        class="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-4"
-      >
-        v2.1.0 • 92 MB
-      </p>
-      <Button variant="downloadMuted" type="button">
-        <iconify-icon icon="lucide:download"></iconify-icon> Download .dmg
-      </Button>
-    </div>
-    <div
-      class="bg-[#1f1f1f] border border-[#2d2d2d] rounded-2xl p-6 hover:border-[#0066cc]/50 transition-all flex flex-col items-center text-center"
-    >
-      <iconify-icon icon="mdi:linux" class="text-5xl text-orange-500 mb-4"
-      ></iconify-icon>
-      <h3 class="text-lg font-bold text-white mb-1">Linux</h3>
-      <p
-        class="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-4"
-      >
-        v2.1.0 • 78 MB
-      </p>
-      <Button variant="downloadMuted" type="button">
-        <iconify-icon icon="lucide:download"></iconify-icon> .AppImage
-      </Button>
-    </div>
-  </div>
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
-    <div>
-      <Label variant="bar" as="h4">
-        <iconify-icon icon="lucide:clipboard-list" class="text-[#0066cc]"
-        ></iconify-icon>
-        What's New in v2.1.0
-      </Label>
-      <ul class="space-y-3">
-        <li class="flex items-start gap-3">
-          <div class="mt-1.5 w-1.5 h-1.5 rounded-full bg-[#0066cc] shrink-0">
-          </div>
-          <p class="text-sm text-gray-400">
-            <span class="text-white font-bold">New:</span> Pelacakan lead real-time
-            + pin peta interaktif.
-          </p>
-        </li>
-        <li class="flex items-start gap-3">
-          <div class="mt-1.5 w-1.5 h-1.5 rounded-full bg-[#0066cc] shrink-0">
-          </div>
-          <p class="text-sm text-gray-400">
-            <span class="text-white font-bold">Improved:</span> Rotasi multi-proxy
-            untuk scraping lebih cepat.
-          </p>
-        </li>
-        <li class="flex items-start gap-3">
-          <div class="mt-1.5 w-1.5 h-1.5 rounded-full bg-[#0066cc] shrink-0">
-          </div>
-          <p class="text-sm text-gray-400">
-            <span class="text-white font-bold">Fixed:</span> Metadata bisnis dengan
-            nomor tersembunyi.
-          </p>
-        </li>
-      </ul>
-    </div>
-    <div>
-      <Label variant="bar" as="h4">
-        <iconify-icon icon="lucide:settings-2" class="text-[#0066cc]"
-        ></iconify-icon>
-        System Requirements
-      </Label>
-      <div class="space-y-4">
         <div
-          class="flex justify-between items-center border-b border-[#2d2d2d] pb-2 gap-4"
+          class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#0066cc]"
         >
-          <span class="text-xs text-gray-500">Windows</span>
-          <span class="text-xs text-gray-400 text-right"
-            >10+ (64-bit), 4GB RAM</span
-          >
+          <iconify-icon icon="lucide:map-pin" class="text-lg text-white"
+          ></iconify-icon>
         </div>
-        <div
-          class="flex justify-between items-center border-b border-[#2d2d2d] pb-2 gap-4"
+        <span class="min-w-0 truncate text-base font-semibold tracking-tight"
+          >MapsScraper Pro</span
         >
-          <span class="text-xs text-gray-500">macOS</span>
-          <span class="text-xs text-gray-400 text-right">10.13+, 4GB RAM</span>
-        </div>
-        <div
-          class="flex justify-between items-center border-b border-[#2d2d2d] pb-2 gap-4"
-        >
-          <span class="text-xs text-gray-500">Linux</span>
-          <span class="text-xs text-gray-400 text-right"
-            >Ubuntu 18.04+, 4GB RAM</span
-          >
-        </div>
-      </div>
-    </div>
-  </div>
-  <div class="mt-10 pt-6 border-t border-[#2d2d2d] flex justify-center">
-    <a
-      id="all-releases-link"
-      href="#"
-      class="text-[#0066cc] text-xs font-bold hover:underline flex items-center gap-1"
-    >
-      View all releases &amp; changelogs
-      <iconify-icon icon="lucide:external-link"></iconify-icon>
-    </a>
-  </div>
-</Dialog>
-
-<!-- Social -->
-<Dialog
-  id="social-modal"
-  zIndex={10010}
-  panelClass="max-w-sm p-6"
-  closeButtonClass="absolute top-4 right-4 text-gray-500 hover:text-white transition-colors"
-  closeIconClass="text-xl"
->
-  <div class="mb-6">
-    <h2 class="text-xl font-bold text-white">Follow Us</h2>
-    <p class="text-gray-500 text-xs">Update fitur dan berita terbaru</p>
-  </div>
-  <div class="space-y-3">
-    <a
-      id="follow-twitter-link"
-      href="https://twitter.com"
-      target="_blank"
-      rel="noopener noreferrer"
-      class="flex items-center justify-between p-3 bg-[#1f1f1f] border border-[#2d2d2d] rounded-xl hover:border-[#0066cc]/50 transition-all group"
-    >
-      <div class="flex items-center gap-3 min-w-0">
-        <iconify-icon
-          icon="mdi:twitter"
-          class="text-2xl text-[#1DA1F2] shrink-0"></iconify-icon>
-        <div class="min-w-0">
-          <p class="text-sm font-bold text-white">Twitter / X</p>
-          <p class="text-[10px] text-gray-500 truncate">@mapsscraper_pro</p>
-        </div>
-      </div>
-      <span
-        class="text-[10px] font-bold text-[#0066cc] uppercase px-3 py-1 bg-[#0066cc]/10 rounded-lg group-hover:bg-[#0066cc] group-hover:text-white transition-all shrink-0"
-        >Follow</span
-      >
-    </a>
-    <a
-      id="follow-linkedin-link"
-      href="https://linkedin.com"
-      target="_blank"
-      rel="noopener noreferrer"
-      class="flex items-center justify-between p-3 bg-[#1f1f1f] border border-[#2d2d2d] rounded-xl hover:border-[#0066cc]/50 transition-all group"
-    >
-      <div class="flex items-center gap-3 min-w-0">
-        <iconify-icon
-          icon="mdi:linkedin"
-          class="text-2xl text-[#0A66C2] shrink-0"></iconify-icon>
-        <div class="min-w-0">
-          <p class="text-sm font-bold text-white">LinkedIn</p>
-          <p class="text-[10px] text-gray-500 truncate">MapsScraper Pro</p>
-        </div>
-      </div>
-      <span
-        class="text-[10px] font-bold text-[#0066cc] uppercase px-3 py-1 bg-[#0066cc]/10 rounded-lg group-hover:bg-[#0066cc] group-hover:text-white transition-all shrink-0"
-        >Follow</span
-      >
-    </a>
-    <a
-      id="follow-github-link"
-      href="https://github.com"
-      target="_blank"
-      rel="noopener noreferrer"
-      class="flex items-center justify-between p-3 bg-[#1f1f1f] border border-[#2d2d2d] rounded-xl hover:border-[#0066cc]/50 transition-all group"
-    >
-      <div class="flex items-center gap-3 min-w-0">
-        <iconify-icon icon="mdi:github" class="text-2xl text-white shrink-0"
-        ></iconify-icon>
-        <div class="min-w-0">
-          <p class="text-sm font-bold text-white">GitHub</p>
-          <p class="text-[10px] text-gray-500 truncate">
-            @mapsscraper-official
-          </p>
-        </div>
-      </div>
-      <span
-        class="text-[10px] font-bold text-[#0066cc] uppercase px-3 py-1 bg-[#0066cc]/10 rounded-lg group-hover:bg-[#0066cc] group-hover:text-white transition-all shrink-0"
-        >Follow</span
-      >
-    </a>
-    <a
-      id="follow-instagram-link"
-      href="https://instagram.com"
-      target="_blank"
-      rel="noopener noreferrer"
-      class="flex items-center justify-between p-3 bg-[#1f1f1f] border border-[#2d2d2d] rounded-xl hover:border-[#0066cc]/50 transition-all group"
-    >
-      <div class="flex items-center gap-3 min-w-0">
-        <iconify-icon
-          icon="mdi:instagram"
-          class="text-2xl text-[#E4405F] shrink-0"></iconify-icon>
-        <div class="min-w-0">
-          <p class="text-sm font-bold text-white">Instagram</p>
-          <p class="text-[10px] text-gray-500 truncate">@mapsscraper.pro</p>
-        </div>
-      </div>
-      <span
-        class="text-[10px] font-bold text-[#0066cc] uppercase px-3 py-1 bg-[#0066cc]/10 rounded-lg group-hover:bg-[#0066cc] group-hover:text-white transition-all shrink-0"
-        >Follow</span
-      >
-    </a>
-    <a
-      id="follow-facebook-link"
-      href="https://facebook.com"
-      target="_blank"
-      rel="noopener noreferrer"
-      class="flex items-center justify-between p-3 bg-[#1f1f1f] border border-[#2d2d2d] rounded-xl hover:border-[#0066cc]/50 transition-all group"
-    >
-      <div class="flex items-center gap-3 min-w-0">
-        <iconify-icon
-          icon="mdi:facebook"
-          class="text-2xl text-[#1877F2] shrink-0"></iconify-icon>
-        <div class="min-w-0">
-          <p class="text-sm font-bold text-white">Facebook</p>
-          <p class="text-[10px] text-gray-500 truncate">MapsScraper Pro</p>
-        </div>
-      </div>
-      <span
-        class="text-[10px] font-bold text-[#0066cc] uppercase px-3 py-1 bg-[#0066cc]/10 rounded-lg group-hover:bg-[#0066cc] group-hover:text-white transition-all shrink-0"
-        >Follow</span
-      >
-    </a>
-  </div>
-</Dialog>
-
-<!-- Settings + sound -->
-<Dialog
-  id="settings-modal"
-  zIndex={10020}
-  panelClass="max-w-2xl max-h-[90vh] overflow-y-auto custom-scrollbar p-6 sm:p-8"
->
-  <div class="mb-8">
-    <h2 class="text-2xl font-bold text-white mb-1">Application Settings</h2>
-    <p class="text-gray-500 text-sm">
-      Notifikasi suara dan riwayat sesi di perangkat ini
-    </p>
-  </div>
-  <div class="space-y-8">
-    <section>
-      <div class="flex items-center justify-between gap-4 mb-4">
-        <div class="min-w-0">
-          <Label variant="subsection" as="h3">Sound Notifications</Label>
-          <Label variant="muted" class="mt-1 block">
-            Bunyi saat tracking / scraping selesai
-          </Label>
-        </div>
-        <div class="flex items-center gap-3 shrink-0">
-          <span
-            id="notification-sound-state"
-            class="text-[10px] font-bold text-gray-400 uppercase">On</span
-          >
-          <label class="relative inline-flex items-center cursor-pointer">
-            <input
-              type="checkbox"
-              id="notification-sound-toggle"
-              class="sr-only peer"
-              checked
-            />
-            <div
-              class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#0066cc]"
-            >
-            </div>
-          </label>
-        </div>
-      </div>
-      <div class="space-y-2">
-        <Label variant="field" for="notification-sound-select">
-          Notification Sound
-        </Label>
-        <Input
-          variant="select"
-          id="notification-sound-select"
-          showChevron={true}
-        >
-          <option value="bell">Bell (Default)</option>
-          <option value="chime">Chime</option>
-          <option value="notification">Notification</option>
-          <option value="success">Success Tone</option>
-          <option value="alert">Alert Beep</option>
-        </Input>
-      </div>
-    </section>
-    <section>
-      <Label variant="subsection" as="h3" class="mb-4">
-        Previous Tracking Sessions
-      </Label>
-      <div
-        class="bg-[#1f1f1f] border border-[#2d2d2d] rounded-xl overflow-hidden"
-      >
-        <div class="max-h-60 overflow-y-auto custom-scrollbar">
-          <table class="w-full text-left border-collapse">
-            <thead
-              class="bg-[#161616] sticky top-0 z-10 border-b border-[#2d2d2d]"
-            >
-              <tr
-                class="text-[9px] font-bold text-gray-500 uppercase tracking-widest"
-              >
-                <th class="px-4 py-3 w-10">
-                  <Input
-                    variant="checkbox"
-                    id="settings-sessions-select-all"
-                    checkboxClass="rounded border-[#2d2d2d] bg-[#1a1a1a] text-[#0066cc] focus:ring-0"
-                    title="Pilih semua"
-                  />
-                </th>
-                <th class="px-4 py-3">Date / Session</th>
-                <th class="px-4 py-3">Location</th>
-                <th class="px-4 py-3 text-right">Results</th>
-              </tr>
-            </thead>
-            <tbody
-              id="settings-sessions-tbody"
-              class="divide-y divide-[#2d2d2d]"
-            >
-            </tbody>
-          </table>
-        </div>
       </div>
       <div
-        class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-4"
+        class="min-h-0 flex-1 space-y-8 overflow-y-auto px-5 py-5 custom-scrollbar sm:px-6"
       >
-        <div class="flex flex-wrap gap-2">
-          <Button
-            variant="settingsBar"
-            type="button"
-            id="settings-sessions-restore"
-          >
-            <iconify-icon icon="lucide:refresh-cw"></iconify-icon> Restore Selected
-          </Button>
-          <Button
-            variant="dangerBar"
-            type="button"
-            id="settings-sessions-delete"
-          >
-            <iconify-icon icon="lucide:trash-2"></iconify-icon> Delete Selected
-          </Button>
-        </div>
-        <Button variant="textLink" type="button" id="settings-sessions-clear">
-          Clear All History
+        <SidebarSearchForm idSuffix="-sheet" />
+      </div>
+      <div class="shrink-0 border-t border-[#2d2d2d] p-4 sm:p-6">
+        <Button variant="primary" id="start-scrape-btn-sheet">
+          <iconify-icon icon="lucide:play-circle"></iconify-icon>
+          Start Scraping
         </Button>
       </div>
-    </section>
-  </div>
-  <div class="mt-10 pt-6 border-t border-[#2d2d2d] flex justify-end">
-    <Button variant="primaryAction" type="button" id="settings-save-btn">
-      Save &amp; Apply Changes
-    </Button>
-  </div>
-</Dialog>
+    </div>
+  </Sheets>
+</div>
+
+<DialogDesktop />
+<DialogSocial />
+<DialogSettings />
 
 <!-- Tanpa define:vars: Astro membungkusnya dalam IIFE dan `import` jadi invalid → skrip tidak jalan. -->
 <script>

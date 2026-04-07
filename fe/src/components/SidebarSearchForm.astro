@@ -1,0 +1,49 @@
+---
+import Input from "./ui/Input.astro";
+import Label from "./ui/Label.astro";
+
+/** Gunakan "" untuk sidebar desktop, "-sheet" untuk panel mobile (ID unik). */
+interface Props {
+  idSuffix?: "" | "-sheet";
+}
+
+const { idSuffix = "" } = Astro.props;
+const S = idSuffix;
+---
+
+<section>
+  <Label variant="section">Basic Search</Label>
+  <div class="space-y-4">
+    <Input
+      variant="field"
+      id={`input-keyword${S}`}
+      type="text"
+      placeholder="Search business/keywords..."
+      icon="lucide:search"
+    />
+    <Input
+      variant="field"
+      id={`input-location${S}`}
+      type="text"
+      placeholder="Location (e.g. Bandung, Jakarta)"
+      icon="lucide:navigation"
+    />
+    <Input
+      variant="field"
+      id={`input-max-results${S}`}
+      type="number"
+      min={1}
+      max={500}
+      value={10}
+      placeholder="10"
+      title="Target listing (tanpa website, wajib ada nomor telepon)"
+      icon="lucide:hash"
+    />
+    <p class="text-[10px] text-gray-500 leading-relaxed">
+      Target = jumlah listing tanpa website + ada nomor (sama seperti aplikasi
+      Go). Dari FE, backend jalan <strong class="text-gray-400">headless</strong>
+      (tanpa jendela Chrome). Progres tampil di
+      <strong class="text-gray-400">Live tracking</strong> + log.
+    </p>
+  </div>
+</section>

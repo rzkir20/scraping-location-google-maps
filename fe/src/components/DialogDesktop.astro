@@ -1,0 +1,155 @@
+---
+import Dialog from "./ui/Dialog.astro";
+import Label from "./ui/Label.astro";
+import Button from "./ui/Button.astro";
+---
+
+<!-- Download desktop (placeholder — tautan rilis bisa disetel nanti) -->
+<Dialog
+  id="download-modal"
+  zIndex={10000}
+  panelClass="max-w-4xl max-h-[95vh] overflow-y-auto custom-scrollbar p-6 sm:p-8"
+>
+  <div class="mb-8 sm:mb-10">
+    <div class="mb-2 flex items-center gap-4">
+      <div
+        class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#0066cc]"
+      >
+        <iconify-icon icon="lucide:monitor" class="text-2xl text-white"
+        ></iconify-icon>
+      </div>
+      <div class="min-w-0">
+        <h2 class="text-xl font-bold text-white sm:text-2xl">
+          Download MapsScraper Pro Desktop
+        </h2>
+        <p class="text-sm text-gray-500">
+          Lead generation penuh di desktop (rilis menyusul)
+        </p>
+      </div>
+    </div>
+  </div>
+  <div class="mb-10 grid grid-cols-1 gap-6 sm:mb-12 md:grid-cols-3">
+    <div
+      class="flex flex-col items-center rounded-2xl border border-[#2d2d2d] bg-[#1f1f1f] p-6 text-center transition-all hover:border-[#0066cc]/50"
+    >
+      <iconify-icon
+        icon="mdi:microsoft-windows"
+        class="mb-4 text-5xl text-[#0066cc]"></iconify-icon>
+      <h3 class="mb-1 text-lg font-bold text-white">Windows</h3>
+      <p
+        class="mb-4 text-[10px] font-bold uppercase tracking-widest text-gray-500"
+      >
+        v2.1.0 • 85 MB
+      </p>
+      <Button variant="downloadPrimary" type="button">
+        <iconify-icon icon="lucide:download"></iconify-icon> Download .exe
+      </Button>
+    </div>
+    <div
+      class="flex flex-col items-center rounded-2xl border border-[#2d2d2d] bg-[#1f1f1f] p-6 text-center transition-all hover:border-[#0066cc]/50"
+    >
+      <iconify-icon icon="mdi:apple" class="mb-4 text-5xl text-gray-400"
+      ></iconify-icon>
+      <h3 class="mb-1 text-lg font-bold text-white">macOS</h3>
+      <p
+        class="mb-4 text-[10px] font-bold uppercase tracking-widest text-gray-500"
+      >
+        v2.1.0 • 92 MB
+      </p>
+      <Button variant="downloadMuted" type="button">
+        <iconify-icon icon="lucide:download"></iconify-icon> Download .dmg
+      </Button>
+    </div>
+    <div
+      class="flex flex-col items-center rounded-2xl border border-[#2d2d2d] bg-[#1f1f1f] p-6 text-center transition-all hover:border-[#0066cc]/50"
+    >
+      <iconify-icon icon="mdi:linux" class="mb-4 text-5xl text-orange-500"
+      ></iconify-icon>
+      <h3 class="mb-1 text-lg font-bold text-white">Linux</h3>
+      <p
+        class="mb-4 text-[10px] font-bold uppercase tracking-widest text-gray-500"
+      >
+        v2.1.0 • 78 MB
+      </p>
+      <Button variant="downloadMuted" type="button">
+        <iconify-icon icon="lucide:download"></iconify-icon> .AppImage
+      </Button>
+    </div>
+  </div>
+  <div class="grid grid-cols-1 gap-10 lg:grid-cols-2">
+    <div>
+      <Label variant="bar" as="h4">
+        <iconify-icon icon="lucide:clipboard-list" class="text-[#0066cc]"
+        ></iconify-icon>
+        What's New in v2.1.0
+      </Label>
+      <ul class="space-y-3">
+        <li class="flex items-start gap-3">
+          <div class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#0066cc]">
+          </div>
+          <p class="text-sm text-gray-400">
+            <span class="font-bold text-white">New:</span> Pelacakan lead real-time
+            + pin peta interaktif.
+          </p>
+        </li>
+        <li class="flex items-start gap-3">
+          <div class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#0066cc]">
+          </div>
+          <p class="text-sm text-gray-400">
+            <span class="font-bold text-white">Improved:</span> Rotasi multi-proxy
+            untuk scraping lebih cepat.
+          </p>
+        </li>
+        <li class="flex items-start gap-3">
+          <div class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#0066cc]">
+          </div>
+          <p class="text-sm text-gray-400">
+            <span class="font-bold text-white">Fixed:</span> Metadata bisnis dengan
+            nomor tersembunyi.
+          </p>
+        </li>
+      </ul>
+    </div>
+    <div>
+      <Label variant="bar" as="h4">
+        <iconify-icon icon="lucide:settings-2" class="text-[#0066cc]"
+        ></iconify-icon>
+        System Requirements
+      </Label>
+      <div class="space-y-4">
+        <div
+          class="flex items-center justify-between gap-4 border-b border-[#2d2d2d] pb-2"
+        >
+          <span class="text-xs text-gray-500">Windows</span>
+          <span class="text-right text-xs text-gray-400"
+            >10+ (64-bit), 4GB RAM</span
+          >
+        </div>
+        <div
+          class="flex items-center justify-between gap-4 border-b border-[#2d2d2d] pb-2"
+        >
+          <span class="text-xs text-gray-500">macOS</span>
+          <span class="text-right text-xs text-gray-400">10.13+, 4GB RAM</span>
+        </div>
+        <div
+          class="flex items-center justify-between gap-4 border-b border-[#2d2d2d] pb-2"
+        >
+          <span class="text-xs text-gray-500">Linux</span>
+          <span class="text-right text-xs text-gray-400"
+            >Ubuntu 18.04+, 4GB RAM</span
+          >
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="mt-10 flex justify-center border-t border-[#2d2d2d] pt-6">
+    <a
+      id="all-releases-link"
+      href="#"
+      class="flex items-center gap-1 text-xs font-bold text-[#0066cc] hover:underline"
+    >
+      View all releases &amp; changelogs
+      <iconify-icon icon="lucide:external-link"></iconify-icon>
+    </a>
+  </div>
+</Dialog>

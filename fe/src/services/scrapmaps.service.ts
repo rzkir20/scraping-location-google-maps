@@ -1,52 +1,36 @@
-import { closeModal, openModal } from "../lib/dashboardDialog";
+import {
+  closeModal,
+  closeSheet,
+  openModal,
+  openSheet,
+} from "../lib/dashboardDialog";
+
+const SIDEBAR_SEARCH_SHEET_ID = "sidebar-search-sheet";
+
+function closeSidebarSearchSheetUi() {
+  closeSheet(SIDEBAR_SEARCH_SHEET_ID);
+  document
+    .getElementById("sidebar-menu-trigger")
+    ?.setAttribute("aria-expanded", "false");
+}
+
+/** Field desktop / sheet mobile (&lt; lg) — sama ID basis + suffix `-sheet`. */
+function pickScrapeField(baseId: string): HTMLInputElement | null {
+  const isLg = window.matchMedia("(min-width: 1024px)").matches;
+  const sheetId = `${baseId}-sheet`;
+  if (isLg) {
+    return (
+      (document.getElementById(baseId) as HTMLInputElement | null) ||
+      (document.getElementById(sheetId) as HTMLInputElement | null)
+    );
+  }
+  return (
+    (document.getElementById(sheetId) as HTMLInputElement | null) ||
+    (document.getElementById(baseId) as HTMLInputElement | null)
+  );
+}
+
 import { scrapMapsApiBase } from "../lib/config";
-
-import type { MapCenter } from "../lib/dashboardMap";
-
-type NotificationKind = "info" | "success" | "error";
-
-interface NotificationEntry {
-  id: string;
-  title: string;
-  body: string;
-  at: number;
-  kind: NotificationKind;
-}
-
-interface SessionRow {
-  at?: string;
-  keyword?: string;
-  location?: string;
-  results?: number;
-  jobId?: string;
-  status?: string;
-}
-
-interface ScrapeStoreRow {
-  name?: string;
-  rating?: string;
-  address?: string;
-  phone?: string;
-}
-
-interface LiveCardRow {
-  name?: string;
-  rating?: string;
-  category?: string;
-  address?: string;
-  phone?: string;
-  openingStatus?: string;
-}
-
-interface ScrapeStatusJson {
-  status?: string;
-  error?: string;
-  logs?: string[];
-  stores?: ScrapeStoreRow[];
-  mapCenter?: MapCenter | null;
-  progress?: { saved?: number; target?: number };
-  currentCard?: LiveCardRow;
-}
 
 /** Cek /api/health tanpa impor Leaflet (chunk peta tetap terpisah dari pemanggil yang ringan). */
 export function runBackendHealthCheck(
@@ -301,7 +285,14 @@ function renderLiveCard(card?: LiveCardRow | null) {
   const addressEl = document.getElementById("live-card-address");
   const openingEl = document.getElementById("live-card-opening");
   const phoneEl = document.getElementById("live-card-phone");
-  if (!nameEl || !ratingEl || !categoryEl || !addressEl || !openingEl || !phoneEl)
+  if (
+    !nameEl ||
+    !ratingEl ||
+    !categoryEl ||
+    !addressEl ||
+    !openingEl ||
+    !phoneEl
+  )
     return;
 
   const name = (card?.name || "").trim();
@@ -552,13 +543,13 @@ function updateLiveProgress(
 }
 
 function setScrapeBusy(busy: boolean) {
-  const btn = document.getElementById(
-    "start-scrape-btn",
-  ) as HTMLButtonElement | null;
-  if (!btn) return;
-  btn.disabled = busy;
-  btn.classList.toggle("opacity-60", busy);
-  btn.classList.toggle("cursor-not-allowed", busy);
+  for (const id of ["start-scrape-btn", "start-scrape-btn-sheet"] as const) {
+    const btn = document.getElementById(id) as HTMLButtonElement | null;
+    if (!btn) continue;
+    btn.disabled = busy;
+    btn.classList.toggle("opacity-60", busy);
+    btn.classList.toggle("cursor-not-allowed", busy);
+  }
 }
 
 function setViewMode(mode: "map" | "list") {
@@ -678,10 +669,32 @@ function wireModalsAndSettings() {
           openModal("social-modal");
           return;
         }
+        if (node.id === "sidebar-menu-trigger") {
+          openSheet(SIDEBAR_SEARCH_SHEET_ID);
+          document
+            .getElementById("sidebar-menu-trigger")
+            ?.setAttribute("aria-expanded", "true");
+          return;
+        }
       }
     },
     true,
   );
+
+  document.querySelectorAll("[data-sheet-close]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const id = btn.getAttribute("data-sheet-close");
+      if (id === SIDEBAR_SEARCH_SHEET_ID) closeSidebarSearchSheetUi();
+      else if (id) closeSheet(id);
+    });
+  });
+  document.querySelectorAll("[data-sheet-backdrop]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const id = btn.getAttribute("data-sheet-backdrop");
+      if (id === SIDEBAR_SEARCH_SHEET_ID) closeSidebarSearchSheetUi();
+      else if (id) closeSheet(id);
+    });
+  });
 
   document.querySelectorAll("[data-modal-close]").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -788,6 +801,7 @@ function wireModalsAndSettings() {
   window.addEventListener("keydown", (e) => {
     if (e.key !== "Escape") return;
     setNotificationPanelOpen(false);
+    closeSidebarSearchSheetUi();
     closeModal("settings-modal");
     closeModal("social-modal");
     closeModal("download-modal");
@@ -804,15 +818,9 @@ function errMsg(v: unknown, fallback: string): string {
 
 function createStartScrapeHandler(apiBase: string) {
   return async function startScrapeFromUI() {
-    const kwEl = document.getElementById(
-      "input-keyword",
-    ) as HTMLInputElement | null;
-    const locEl = document.getElementById(
-      "input-location",
-    ) as HTMLInputElement | null;
-    const maxEl = document.getElementById(
-      "input-max-results",
-    ) as HTMLInputElement | null;
+    const kwEl = pickScrapeField("input-keyword");
+    const locEl = pickScrapeField("input-location");
+    const maxEl = pickScrapeField("input-max-results");
     const kw = kwEl?.value?.trim() || "";
     const loc = locEl?.value?.trim() || "";
     const maxRaw = maxEl?.value;
@@ -905,6 +913,7 @@ function createStartScrapeHandler(apiBase: string) {
     }
 
     setViewMode("map");
+    closeSidebarSearchSheetUi();
     try {
       const m = await getMapMod();
       const mc =
@@ -1047,9 +1056,11 @@ function createStartScrapeHandler(apiBase: string) {
 export function initScrapMapsDashboard(
   apiBase: string = scrapMapsApiBase,
 ): void {
-  document.getElementById("start-scrape-btn")?.addEventListener("click", () => {
-    void createStartScrapeHandler(apiBase)();
-  });
+  const runStart = () => void createStartScrapeHandler(apiBase)();
+  document.getElementById("start-scrape-btn")?.addEventListener("click", runStart);
+  document
+    .getElementById("start-scrape-btn-sheet")
+    ?.addEventListener("click", runStart);
 
   document
     .getElementById("map-view-toggle")

@@ -1,0 +1,59 @@
+---
+/**
+ * Panel geser (drawer kiri / bottom sheet via panelClass).
+ * Buka/tutup dengan `openSheet(id)` / `closeSheet(id)` dari `../lib/dashboardDialog`.
+ */
+interface Props {
+  id: string;
+  zIndex?: number;
+  /** Kelas untuk panel (lebar, rounded, max-height, overflow). */
+  panelClass?: string;
+  /** Arah: drawer kiri (default) atau sesuaikan lewat panelClass. */
+  showClose?: boolean;
+  closeButtonClass?: string;
+  closeIconClass?: string;
+}
+
+const {
+  id,
+  zIndex = 950,
+  panelClass = "h-full w-[min(100vw,320px)] max-w-[100vw] rounded-r-2xl border-r border-y border-[#2d2d2d] bg-[#161616] shadow-2xl overflow-y-auto custom-scrollbar",
+  showClose = true,
+  closeButtonClass = "absolute top-4 right-4 z-10 text-gray-500 hover:text-white transition-colors",
+  closeIconClass = "text-xl",
+} = Astro.props;
+---
+
+<div
+  id={id}
+  hidden
+  class="sheet-root fixed inset-0 p-0"
+  style={`z-index: ${zIndex}`}
+  aria-hidden="true"
+  role="dialog"
+  aria-modal="true"
+>
+  <button
+    type="button"
+    class="absolute inset-0 cursor-default border-0 bg-black/70 p-0 backdrop-blur-sm"
+    tabindex="-1"
+    aria-label="Tutup panel"
+    data-sheet-backdrop={id}></button>
+  <div
+    class:list={["relative z-10 flex min-h-0 flex-col text-left", panelClass]}
+  >
+    {
+      showClose && (
+        <button
+          type="button"
+          class:list={[closeButtonClass]}
+          aria-label="Tutup"
+          data-sheet-close={id}
+        >
+          <iconify-icon icon="lucide:x" class={closeIconClass} />
+        </button>
+      )
+    }
+    <slot />
+  </div>
+</div>
