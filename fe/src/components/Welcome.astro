@@ -82,7 +82,9 @@ const apiBase = scrapMapsApiBase;
           <span id="header-status-text" class="truncate">Mengecek backend…</span
           >
         </div>
-        <span class="max-w-[min(100%,14rem)] truncate lg:max-w-xs">
+        <span
+          class="max-w-[min(100%,14rem)] truncate lg:max-w-xs hidden lg:block"
+        >
           <span class="text-white font-medium">API:</span>
           <span id="header-api-url" class="font-mono text-xs">{apiBase}</span>
         </span>
@@ -173,7 +175,7 @@ const apiBase = scrapMapsApiBase;
 
     <div
       id="dashboard-split"
-      class="relative flex w-full flex-1 flex-col min-h-screen lg:flex-row"
+      class="relative flex w-full flex-1 flex-col min-h-[80dvh] md:min-h-[90dvh] lg:flex-row"
     >
       <!-- Toggle di luar #map-stage (tetap bisa klik dari list); posisi disinkronkan di scrapmaps.service. -->
       <div
@@ -192,7 +194,7 @@ const apiBase = scrapMapsApiBase;
       <!-- Map: parent flex-1 + min-h supaya kontainer punya tinggi untuk Leaflet -->
       <div
         id="map-stage"
-        class="relative flex-1 min-h-[80dvh] overflow-hidden border-b border-[#2d2d2d] bg-[#1a1a1a] shadow-inner sm:min-h-[52dvh] lg:min-h-0 lg:border-b-0 lg:border-r"
+        class="relative flex-1 min-h-[70dvh] overflow-hidden border-b border-[#2d2d2d] bg-[#1a1a1a] shadow-inner sm:min-h-[52dvh] lg:min-h-0 lg:border-b-0 lg:border-r"
       >
         <div
           class="absolute inset-0 opacity-10 pointer-events-none"
@@ -445,13 +447,41 @@ const apiBase = scrapMapsApiBase;
             <iconify-icon icon="lucide:navigation-2" class="text-lg"
             ></iconify-icon>
           </Button>
+          <Button
+            variant="mapTool"
+            id="map-fullscreen-toggle"
+            type="button"
+            ariaLabel="Fullscreen map"
+            ariaExpanded={false}
+          >
+            <iconify-icon
+              id="map-fullscreen-icon"
+              icon="lucide:maximize"
+              class="text-lg"></iconify-icon>
+          </Button>
         </div>
       </div>
 
       <!-- Results panel (desktop: collapse ke strip sempit di samping peta) -->
       <div
+        id="results-panel-mobile-strip"
+        class="absolute bottom-3 left-1/2 z-30 -translate-x-1/2 lg:hidden"
+        aria-hidden="false"
+      >
+        <Button
+          variant="iconSq"
+          type="button"
+          id="results-panel-mobile-expand-btn"
+          ariaLabel="Tampilkan hasil"
+          ariaExpanded={false}
+          ariaControls="results-panel-expanded"
+        >
+          <iconify-icon icon="lucide:list"></iconify-icon>
+        </Button>
+      </div>
+      <div
         id="results-panel"
-        class="flex h-full min-h-[min(20rem,42dvh)] w-full shrink-0 flex-col overflow-hidden bg-[#161616] transition-[width] duration-300 ease-out lg:min-h-0 lg:w-112.5"
+        class="flex h-full min-h-[min(20rem,42dvh)] w-full shrink-0 flex-col overflow-hidden bg-[#161616] transition-[width] duration-300 ease-out lg:min-h-0 lg:w-[450px]"
       >
         <div
           id="results-panel-collapsed-strip"
@@ -492,8 +522,16 @@ const apiBase = scrapMapsApiBase;
               >
                 <iconify-icon icon="lucide:chevron-right"></iconify-icon>
               </Button>
-              <Button variant="iconSq" type="button" ariaLabel="Filter">
-                <iconify-icon icon="lucide:filter"></iconify-icon>
+              <Button
+                variant="iconSq"
+                type="button"
+                id="results-panel-mobile-collapse-toggle"
+                class="inline-flex lg:hidden"
+                ariaLabel="Sembunyikan hasil"
+                ariaExpanded={true}
+                ariaControls="results-panel-expanded"
+              >
+                <iconify-icon icon="lucide:chevron-down"></iconify-icon>
               </Button>
               <Button variant="iconSq" type="button" ariaLabel="Columns">
                 <iconify-icon icon="lucide:columns"></iconify-icon>
@@ -579,11 +617,13 @@ const apiBase = scrapMapsApiBase;
 
     <!-- Analytics strip -->
     <section
-      class="shrink-0 overflow-x-auto border-t border-[#2d2d2d] bg-[#0f0f0f] p-4 pb-[max(1rem,env(safe-area-inset-bottom))] custom-scrollbar sm:p-6"
+      class="shrink-0 border-t border-[#2d2d2d] bg-[#0f0f0f] p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:p-6"
     >
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 min-w-0">
+      <div
+        class="mx-auto grid w-full min-w-0 grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2 lg:grid-cols-4 lg:gap-6"
+      >
         <div
-          class="bg-[#161616] border border-[#2d2d2d] rounded-2xl p-5 hover:border-[#0066cc]/50 transition-all group shadow-lg"
+          class="min-w-0 overflow-hidden rounded-2xl border border-[#2d2d2d] bg-[#161616] p-4 shadow-lg transition-all group hover:border-[#0066cc]/50 sm:p-5"
         >
           <div class="flex items-center justify-between mb-4">
             <Label variant="cardTitle" as="h4">Location Summary</Label>
@@ -592,7 +632,7 @@ const apiBase = scrapMapsApiBase;
               class="text-gray-600 group-hover:text-[#0066cc] transition-colors"
             ></iconify-icon>
           </div>
-          <div class="space-y-4">
+          <div class="min-w-0 space-y-4">
             <div>
               <span
                 id="dash-footer-total"
@@ -603,7 +643,9 @@ const apiBase = scrapMapsApiBase;
                 >Total Businesses Found</span
               >
             </div>
-            <div class="grid grid-cols-2 gap-4 pt-2 border-t border-[#2d2d2d]">
+            <div
+              class="grid grid-cols-2 gap-3 border-t border-[#2d2d2d] pt-2 sm:gap-4"
+            >
               <div>
                 <span class="block text-lg font-bold text-white">
                   <span id="dash-analytics-avg">—</span><span
@@ -636,7 +678,7 @@ const apiBase = scrapMapsApiBase;
           </div>
         </div>
         <div
-          class="bg-[#161616] border border-[#2d2d2d] rounded-2xl p-5 hover:border-[#0066cc]/50 transition-all group shadow-lg"
+          class="min-w-0 overflow-hidden rounded-2xl border border-[#2d2d2d] bg-[#161616] p-4 shadow-lg transition-all group hover:border-[#0066cc]/50 sm:p-5"
         >
           <div class="flex items-center justify-between mb-4">
             <Label variant="cardTitle" as="h4">Rating Distribution</Label>
@@ -671,7 +713,7 @@ const apiBase = scrapMapsApiBase;
           </div>
         </div>
         <div
-          class="bg-[#161616] border border-[#2d2d2d] rounded-2xl p-5 hover:border-[#0066cc]/50 transition-all group shadow-lg"
+          class="min-w-0 overflow-hidden rounded-2xl border border-[#2d2d2d] bg-[#161616] p-4 shadow-lg transition-all group hover:border-[#0066cc]/50 sm:p-5"
         >
           <div class="flex items-center justify-between mb-4">
             <Label variant="cardTitle" as="h4">Quick Stats</Label>
@@ -680,7 +722,7 @@ const apiBase = scrapMapsApiBase;
               class="text-gray-600 group-hover:text-[#0066cc] transition-colors"
             ></iconify-icon>
           </div>
-          <div class="grid grid-cols-2 gap-x-4 gap-y-4">
+          <div class="grid grid-cols-2 gap-x-3 gap-y-4 sm:gap-x-4">
             <div>
               <span
                 id="analytics-stat-phone"
@@ -720,7 +762,7 @@ const apiBase = scrapMapsApiBase;
           </div>
         </div>
         <div
-          class="bg-[#161616] border border-[#2d2d2d] rounded-2xl p-5 hover:border-[#0066cc]/50 transition-all group shadow-lg"
+          class="min-w-0 overflow-hidden rounded-2xl border border-[#2d2d2d] bg-[#161616] p-4 shadow-lg transition-all group hover:border-[#0066cc]/50 sm:p-5"
         >
           <div class="flex items-center justify-between mb-4">
             <Label variant="cardTitle" as="h4">Top Rated</Label>
@@ -729,7 +771,10 @@ const apiBase = scrapMapsApiBase;
               class="text-gray-600 group-hover:text-[#0066cc] transition-colors"
             ></iconify-icon>
           </div>
-          <div id="analytics-top-rated" class="space-y-2">
+          <div
+            id="analytics-top-rated"
+            class="min-w-0 space-y-2 text-xs sm:text-sm **:wrap-break-word"
+          >
             <p class="px-1 text-xs text-gray-500">
               Data muncul setelah scraping selesai.
             </p>

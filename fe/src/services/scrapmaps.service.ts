@@ -803,6 +803,7 @@ const STRIP_RESULTS_COLLAPSED =
   "hidden min-h-0 lg:flex lg:min-h-0 lg:flex-1 lg:flex-col lg:items-center lg:justify-center lg:gap-2 lg:border-l lg:border-[#2d2d2d] lg:bg-[#161616] lg:px-0 lg:py-3";
 
 let resultsPanelCollapsed = false;
+let resultsPanelMobileOpen = false;
 
 /** Map: kanan-atas area peta. Table/list: kiri atas. */
 const VIEW_TOGGLE_CLASS_BASE =
@@ -834,10 +835,15 @@ function syncResultsPanelChrome(mapListMode: "map" | "list") {
   const panel = document.getElementById("results-panel");
   const inner = document.getElementById("results-panel-expanded");
   const strip = document.getElementById("results-panel-collapsed-strip");
+  const mobileStrip = document.getElementById("results-panel-mobile-strip");
+  const mobileExpand = document.getElementById("results-panel-mobile-expand-btn");
+  const mobileCollapse = document.getElementById("results-panel-mobile-collapse-toggle");
   const collapseToggle = document.getElementById(
     "results-panel-collapse-toggle",
   );
   if (!panel || !inner || !strip) return;
+
+  const isMobile = window.matchMedia("(max-width: 1023px)").matches;
 
   if (mapListMode === "list") {
     panel.classList.remove(RESULTS_PANEL_LG_WIDTH, RESULTS_PANEL_LG_COLLAPSED);
@@ -846,6 +852,15 @@ function syncResultsPanelChrome(mapListMode: "map" | "list") {
     strip.className = STRIP_RESULTS_HIDDEN;
     strip.setAttribute("aria-hidden", "true");
     collapseToggle?.setAttribute("aria-expanded", "true");
+    if (isMobile) {
+      resultsPanelMobileOpen = true;
+      panel.classList.remove("hidden");
+      mobileStrip?.classList.add("hidden");
+      mobileStrip?.setAttribute("aria-hidden", "true");
+      mobileExpand?.setAttribute("aria-expanded", "true");
+      mobileCollapse?.setAttribute("aria-expanded", "true");
+      inner.classList.remove("hidden");
+    }
     syncViewTogglePosition();
     return;
   }
@@ -866,6 +881,30 @@ function syncResultsPanelChrome(mapListMode: "map" | "list") {
     strip.setAttribute("aria-hidden", "true");
     collapseToggle?.setAttribute("aria-expanded", "true");
   }
+
+  if (isMobile) {
+    if (resultsPanelMobileOpen) {
+      panel.classList.remove("hidden");
+      mobileStrip?.classList.add("hidden");
+      mobileStrip?.setAttribute("aria-hidden", "true");
+      mobileExpand?.setAttribute("aria-expanded", "true");
+      mobileCollapse?.setAttribute("aria-expanded", "true");
+      inner.classList.remove("hidden");
+    } else {
+      panel.classList.add("hidden");
+      mobileStrip?.classList.remove("hidden");
+      mobileStrip?.setAttribute("aria-hidden", "false");
+      mobileExpand?.setAttribute("aria-expanded", "false");
+      mobileCollapse?.setAttribute("aria-expanded", "false");
+      inner.classList.add("hidden");
+    }
+  } else {
+    panel.classList.remove("hidden");
+    mobileStrip?.classList.add("hidden");
+    mobileStrip?.setAttribute("aria-hidden", "true");
+    inner.classList.remove("hidden");
+  }
+
   syncViewTogglePosition();
 }
 
@@ -885,6 +924,24 @@ function wireResultsPanelCollapse() {
   document
     .getElementById("results-panel-expand-btn")
     ?.addEventListener("click", toggle);
+
+  document
+    .getElementById("results-panel-mobile-expand-btn")
+    ?.addEventListener("click", () => {
+      resultsPanelMobileOpen = true;
+      syncResultsPanelChrome("map");
+    });
+
+  document
+    .getElementById("results-panel-mobile-collapse-toggle")
+    ?.addEventListener("click", () => {
+      resultsPanelMobileOpen = false;
+      syncResultsPanelChrome("map");
+    });
+
+  window.addEventListener("resize", () => {
+    syncResultsPanelChrome(split?.classList.contains("lg:flex-col") ? "list" : "map");
+  });
 }
 
 function setViewMode(mode: "map" | "list") {

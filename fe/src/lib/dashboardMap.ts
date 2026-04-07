@@ -11,6 +11,15 @@ let searchDisc: L.Circle | null = null;
 let lastCenter: L.LatLngTuple = DEFAULT_CENTER;
 let resizeObserver: ResizeObserver | null = null;
 
+type FullscreenDocument = Document & {
+  webkitFullscreenElement?: Element | null;
+  webkitExitFullscreen?: () => Promise<void> | void;
+};
+
+type FullscreenElement = HTMLElement & {
+  webkitRequestFullscreen?: () => Promise<void> | void;
+};
+
 function parseCenter(mc: MapCenter | null | undefined): L.LatLngTuple | null {
   if (!mc?.lat || !mc.lng) return null;
   const lat = parseFloat(mc.lat);
@@ -56,6 +65,48 @@ function wireZoomButtons() {
     if (map)
       map.setView(lastCenter, Math.max(map.getZoom(), 12), { animate: true });
   });
+
+  const fsDoc = document as FullscreenDocument;
+  const fsBtn = document.getElementById(
+    "map-fullscreen-toggle",
+  ) as HTMLButtonElement | null;
+  const fsIcon = document.getElementById("map-fullscreen-icon");
+  const mapStage = document.getElementById("map-stage") as FullscreenElement | null;
+  if (!fsBtn || !mapStage) return;
+
+  const isMapFullscreen = () =>
+    document.fullscreenElement === mapStage ||
+    fsDoc.webkitFullscreenElement === mapStage;
+
+  const syncFullscreenUi = () => {
+    const active = isMapFullscreen();
+    fsBtn.setAttribute("aria-expanded", active ? "true" : "false");
+    fsBtn.setAttribute("aria-label", active ? "Exit fullscreen map" : "Fullscreen map");
+    if (fsIcon) fsIcon.setAttribute("icon", active ? "lucide:minimize" : "lucide:maximize");
+    scheduleInvalidate();
+  };
+
+  fsBtn.addEventListener("click", async () => {
+    const active = isMapFullscreen();
+    try {
+      if (active) {
+        if (document.exitFullscreen) await document.exitFullscreen();
+        else if (fsDoc.webkitExitFullscreen) await fsDoc.webkitExitFullscreen();
+      } else {
+        if (mapStage.requestFullscreen) await mapStage.requestFullscreen();
+        else if (mapStage.webkitRequestFullscreen)
+          await mapStage.webkitRequestFullscreen();
+      }
+    } catch (e) {
+      console.warn("Toggle fullscreen gagal:", e);
+    } finally {
+      syncFullscreenUi();
+    }
+  });
+
+  document.addEventListener("fullscreenchange", syncFullscreenUi);
+  document.addEventListener("webkitfullscreenchange", syncFullscreenUi as EventListener);
+  syncFullscreenUi();
 }
 
 /** Peta Leaflet + tile gelap; dipanggil sekali. */
