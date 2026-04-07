@@ -8,7 +8,7 @@
     "binding": "ASSETS",
   },
   "vars": {
-    "PUBLIC_API_URL": "http://localhost:8080",
+    "PUBLIC_API_URL": "https://scraping-location-google-maps-production.up.railway.app",
     "PUBLIC_SITE_URL": "https://trackmaps.rizkiramadhan.web.id",
   },
   "observability": {
