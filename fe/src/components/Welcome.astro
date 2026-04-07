@@ -73,7 +73,7 @@ const apiBase = scrapMapsApiBase;
         </Button>
         <div
           id="header-status-pill"
-          class="flex max-w-full min-w-0 items-center gap-2 rounded-full border px-2.5 py-1 text-[11px] font-medium sm:px-3 sm:text-xs bg-amber-500/10 border-amber-500/20 text-amber-400"
+          class="flex max-w-full min-w-0 items-center gap-2 rounded-full border px-2.5 py-1 text-xs font-medium sm:px-3 sm:text-xs bg-amber-500/10 border-amber-500/20 text-amber-400"
         >
           <span
             id="header-status-dot"
@@ -84,9 +84,7 @@ const apiBase = scrapMapsApiBase;
         </div>
         <span class="max-w-[min(100%,14rem)] truncate lg:max-w-xs">
           <span class="text-white font-medium">API:</span>
-          <span id="header-api-url" class="font-mono text-[11px]"
-            >{apiBase}</span
-          >
+          <span id="header-api-url" class="font-mono text-xs">{apiBase}</span>
         </span>
         <span class="h-3 w-px bg-[#2d2d2d] shrink-0" aria-hidden="true"></span>
         <div
@@ -180,7 +178,7 @@ const apiBase = scrapMapsApiBase;
       <!-- Toggle di luar #map-stage (tetap bisa klik dari list); posisi disinkronkan di scrapmaps.service. -->
       <div
         id="map-list-view-toggle-group"
-        class="pointer-events-auto absolute right-3 top-3 z-30 flex rounded-lg border border-[#2d2d2d] bg-[#161616]/95 p-0.5 shadow-xl sm:right-6 sm:top-6 sm:p-1 lg:right-[calc(450px+1.5rem)]"
+        class="pointer-events-auto absolute right-3 top-3 z-30 flex rounded-lg border border-[#2d2d2d] bg-[#161616]/95 p-0.5 shadow-xl sm:right-6 sm:top-6 sm:p-1 lg:right-118.5"
       >
         <Button variant="toggleOn" id="map-view-toggle" type="button">
           <iconify-icon icon="lucide:map"></iconify-icon>
@@ -214,7 +212,7 @@ const apiBase = scrapMapsApiBase;
         </div>
         <div
           id="map-idle-banner"
-          class="pointer-events-none absolute bottom-20 left-1/2 z-15 max-w-[min(92vw,420px)] -translate-x-1/2 rounded-lg border border-[#2d2d2d] bg-[#161616]/95 px-3 py-2 text-center text-[10px] text-gray-400 shadow-lg backdrop-blur-sm sm:bottom-14 sm:px-4 sm:text-[11px]"
+          class="pointer-events-none absolute bottom-20 left-1/2 z-15 max-w-[min(92vw,420px)] -translate-x-1/2 rounded-lg border border-[#2d2d2d] bg-[#161616]/95 px-3 py-2 text-center text-xs text-gray-400 shadow-lg backdrop-blur-sm sm:bottom-14 sm:px-4 sm:text-xs"
         >
           <span class="font-semibold text-[#0066cc]">Peta preview</span>
           · OSM + Carto (gelap). Titik
@@ -233,7 +231,7 @@ const apiBase = scrapMapsApiBase;
             <div class="mb-4 flex items-center justify-between">
               <div class="min-w-0">
                 <p
-                  class="text-[10px] font-bold uppercase tracking-widest text-gray-500"
+                  class="text-xs font-bold uppercase tracking-widest text-gray-500"
                 >
                   Total Scraped
                 </p>
@@ -246,7 +244,7 @@ const apiBase = scrapMapsApiBase;
               </div>
               <div class="shrink-0 text-right">
                 <p
-                  class="text-[10px] font-bold uppercase tracking-widest text-gray-500"
+                  class="text-xs font-bold uppercase tracking-widest text-gray-500"
                 >
                   Avg Rating
                 </p>
@@ -264,13 +262,13 @@ const apiBase = scrapMapsApiBase;
             </div>
             <div class="space-y-2">
               <p
-                class="text-[10px] font-bold uppercase tracking-widest text-gray-500"
+                class="text-xs font-bold uppercase tracking-widest text-gray-500"
               >
                 Rating Distribution
               </p>
               <div class="space-y-1.5">
                 <div class="flex items-center gap-2">
-                  <span class="w-4 shrink-0 text-[10px] text-gray-400">5★</span>
+                  <span class="w-4 shrink-0 text-xs text-gray-400">5★</span>
                   <div
                     class="h-1.5 flex-1 overflow-hidden rounded-full bg-gray-800"
                   >
@@ -282,12 +280,12 @@ const apiBase = scrapMapsApiBase;
                   </div>
                   <span
                     id="dash-sidebar-dist-label-5"
-                    class="w-9 shrink-0 text-right text-[10px] text-gray-500"
+                    class="w-9 shrink-0 text-right text-xs text-gray-500"
                     >0</span
                   >
                 </div>
                 <div class="flex items-center gap-2">
-                  <span class="w-4 shrink-0 text-[10px] text-gray-400">4★</span>
+                  <span class="w-4 shrink-0 text-xs text-gray-400">4★</span>
                   <div
                     class="h-1.5 flex-1 overflow-hidden rounded-full bg-gray-800"
                   >
@@ -299,12 +297,12 @@ const apiBase = scrapMapsApiBase;
                   </div>
                   <span
                     id="dash-sidebar-dist-label-4"
-                    class="w-9 shrink-0 text-right text-[10px] text-gray-500"
+                    class="w-9 shrink-0 text-right text-xs text-gray-500"
                     >0</span
                   >
                 </div>
                 <div class="flex items-center gap-2">
-                  <span class="w-4 shrink-0 text-[10px] text-gray-400">3★</span>
+                  <span class="w-4 shrink-0 text-xs text-gray-400">3★</span>
                   <div
                     class="h-1.5 flex-1 overflow-hidden rounded-full bg-gray-800"
                   >
@@ -316,7 +314,7 @@ const apiBase = scrapMapsApiBase;
                   </div>
                   <span
                     id="dash-sidebar-dist-label-3"
-                    class="w-9 shrink-0 text-right text-[10px] text-gray-500"
+                    class="w-9 shrink-0 text-right text-xs text-gray-500"
                     >0</span
                   >
                 </div>
@@ -340,8 +338,7 @@ const apiBase = scrapMapsApiBase;
               </div>
               <span
                 id="live-progress-label"
-                class="shrink-0 font-mono text-[10px] text-[#0066cc]"
-                >0 / 0</span
+                class="shrink-0 font-mono text-xs text-[#0066cc]">0 / 0</span
               >
             </div>
             <div class="h-1.5 w-full overflow-hidden rounded-full bg-gray-800">
@@ -364,17 +361,17 @@ const apiBase = scrapMapsApiBase;
               >
                 Menunggu kartu...
               </p>
-              <p class="text-[10px] text-gray-500">
+              <p class="text-xs text-gray-500">
                 Rating: <span id="live-card-rating">-</span>
               </p>
-              <p id="live-card-category" class="text-[10px] text-gray-500">-</p>
+              <p id="live-card-category" class="text-xs text-gray-500">-</p>
               <p
                 id="live-card-address"
-                class="text-[10px] leading-relaxed text-gray-400 wrap-break-word"
+                class="text-xs leading-relaxed text-gray-400 wrap-break-word"
               >
                 -
               </p>
-              <p class="text-[10px] text-gray-500">
+              <p class="text-xs text-gray-500">
                 <span id="live-card-opening">-</span>
                 <span class="text-gray-600"> • </span>
                 <span id="live-card-phone" class="font-mono">-</span>
@@ -387,7 +384,7 @@ const apiBase = scrapMapsApiBase;
             <Label variant="caption">Log scraping</Label>
             <pre
               id="scrape-log"
-              class="m-0 text-[10px] font-mono leading-relaxed text-gray-400 wrap-break-word whitespace-pre-wrap">Menunggu job…</pre>
+              class="m-0 text-xs font-mono leading-relaxed text-gray-400 wrap-break-word whitespace-pre-wrap">Menunggu job…</pre>
           </div>
         </div>
 
@@ -398,23 +395,23 @@ const apiBase = scrapMapsApiBase;
           <div class="grid grid-cols-1 gap-1.5">
             <div class="flex items-center gap-2">
               <div class="w-2.5 h-2.5 rounded-full bg-[#FFD700]"></div>
-              <span class="text-[10px] text-gray-400">5.0 Stars</span>
+              <span class="text-xs text-gray-400">5.0 Stars</span>
             </div>
             <div class="flex items-center gap-2">
               <div class="w-2.5 h-2.5 rounded-full bg-[#0066cc]"></div>
-              <span class="text-[10px] text-gray-400">4.0 - 4.9</span>
+              <span class="text-xs text-gray-400">4.0 - 4.9</span>
             </div>
             <div class="flex items-center gap-2">
               <div class="w-2.5 h-2.5 rounded-full bg-[#FF8C00]"></div>
-              <span class="text-[10px] text-gray-400">3.0 - 3.9</span>
+              <span class="text-xs text-gray-400">3.0 - 3.9</span>
             </div>
             <div class="flex items-center gap-2">
               <div class="w-2.5 h-2.5 rounded-full bg-[#FF4444]"></div>
-              <span class="text-[10px] text-gray-400">2.0 - 2.9</span>
+              <span class="text-xs text-gray-400">2.0 - 2.9</span>
             </div>
             <div class="flex items-center gap-2">
               <div class="w-2.5 h-2.5 rounded-full bg-[#666666]"></div>
-              <span class="text-[10px] text-gray-400">Below 2.0</span>
+              <span class="text-xs text-gray-400">Below 2.0</span>
             </div>
           </div>
         </div>
@@ -454,7 +451,7 @@ const apiBase = scrapMapsApiBase;
       <!-- Results panel (desktop: collapse ke strip sempit di samping peta) -->
       <div
         id="results-panel"
-        class="flex h-full min-h-[min(20rem,42dvh)] w-full shrink-0 flex-col overflow-hidden bg-[#161616] transition-[width] duration-300 ease-out lg:min-h-0 lg:w-[450px]"
+        class="flex h-full min-h-[min(20rem,42dvh)] w-full shrink-0 flex-col overflow-hidden bg-[#161616] transition-[width] duration-300 ease-out lg:min-h-0 lg:w-112.5"
       >
         <div
           id="results-panel-collapsed-strip"
@@ -514,7 +511,7 @@ const apiBase = scrapMapsApiBase;
                 class="sticky top-0 z-10 border-b border-[#2d2d2d] bg-[#161616]"
               >
                 <tr
-                  class="text-[10px] font-semibold tracking-widest text-gray-500 uppercase"
+                  class="text-xs font-semibold tracking-widest text-gray-500 uppercase"
                 >
                   <th class="w-full min-w-0 px-3 py-3 align-top sm:px-4">
                     Name
@@ -602,7 +599,7 @@ const apiBase = scrapMapsApiBase;
                 class="block text-3xl font-bold text-white">—</span
               >
               <span
-                class="text-[10px] text-gray-500 font-bold uppercase tracking-tighter"
+                class="text-xs text-gray-500 font-bold uppercase tracking-tighter"
                 >Total Businesses Found</span
               >
             </div>
@@ -613,7 +610,7 @@ const apiBase = scrapMapsApiBase;
                     class="text-xs text-gray-500">/5</span
                   >
                 </span>
-                <span class="text-[9px] text-gray-500 uppercase font-bold"
+                <span class="text-xs text-gray-500 uppercase font-bold"
                   >Avg Rating</span
                 >
               </div>
@@ -623,7 +620,7 @@ const apiBase = scrapMapsApiBase;
                   class="block truncate text-base font-bold text-[#0066cc] sm:text-lg"
                   title="">—</span
                 >
-                <span class="text-[9px] text-gray-500 uppercase font-bold"
+                <span class="text-xs text-gray-500 uppercase font-bold"
                   >Keyword</span
                 >
                 <span
@@ -631,7 +628,7 @@ const apiBase = scrapMapsApiBase;
                   class="mt-1 block truncate text-xs font-medium text-gray-400"
                   title="">—</span
                 >
-                <span class="text-[9px] text-gray-500 uppercase font-bold"
+                <span class="text-xs text-gray-500 uppercase font-bold"
                   >Location</span
                 >
               </div>
@@ -652,7 +649,7 @@ const apiBase = scrapMapsApiBase;
             {
               [5, 4, 3, 2, 1].map((star) => (
                 <div class="flex items-center gap-2">
-                  <span class="text-[10px] w-4 font-bold text-gray-500">
+                  <span class="text-xs w-4 font-bold text-gray-500">
                     {star}★
                   </span>
                   <div class="flex-1 h-1.5 overflow-hidden rounded-full bg-gray-800">
@@ -664,7 +661,7 @@ const apiBase = scrapMapsApiBase;
                   </div>
                   <span
                     id={`analytics-dist-count-${star}`}
-                    class="w-8 shrink-0 text-right font-mono text-[10px] text-gray-400"
+                    class="w-8 shrink-0 text-right font-mono text-xs text-gray-400"
                   >
                     0
                   </span>
@@ -689,7 +686,7 @@ const apiBase = scrapMapsApiBase;
                 id="analytics-stat-phone"
                 class="block font-mono text-xl font-bold text-white">—</span
               >
-              <span class="text-[9px] text-gray-500 uppercase font-bold"
+              <span class="text-xs text-gray-500 uppercase font-bold"
                 >With phone</span
               >
             </div>
@@ -698,7 +695,7 @@ const apiBase = scrapMapsApiBase;
                 id="analytics-stat-address"
                 class="block font-mono text-xl font-bold text-white">—</span
               >
-              <span class="text-[9px] text-gray-500 uppercase font-bold"
+              <span class="text-xs text-gray-500 uppercase font-bold"
                 >With address</span
               >
             </div>
@@ -707,7 +704,7 @@ const apiBase = scrapMapsApiBase;
                 id="analytics-stat-rated"
                 class="block font-mono text-xl font-bold text-white">—</span
               >
-              <span class="text-[9px] text-gray-500 uppercase font-bold"
+              <span class="text-xs text-gray-500 uppercase font-bold"
                 >Rated</span
               >
             </div>
@@ -716,7 +713,7 @@ const apiBase = scrapMapsApiBase;
                 id="analytics-stat-high"
                 class="block font-mono text-xl font-bold text-white">—</span
               >
-              <span class="text-[9px] text-gray-500 uppercase font-bold"
+              <span class="text-xs text-gray-500 uppercase font-bold"
                 >Rated ≥4</span
               >
             </div>

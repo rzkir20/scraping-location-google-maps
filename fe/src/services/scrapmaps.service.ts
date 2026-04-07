@@ -445,7 +445,7 @@ function setResultsTable(stores: ScrapeStoreRow[]) {
   if (totalFooter) totalFooter.textContent = formatted;
   if (!n) {
     tbody.innerHTML =
-      '<tr><td colspan="4" class="px-4 py-10 text-center text-sm text-gray-500 leading-relaxed">Belum ada hasil. Isi <strong class="text-gray-400">keyword</strong>, <strong class="text-gray-400">lokasi</strong>, dan <strong class="text-gray-400">target</strong>, lalu klik <span class="text-[#0066cc] font-medium">Start Scraping</span>.<br/><span class="text-xs mt-2 block text-gray-600">Backend: <code class="text-gray-500">cd be && go run . server</code></span></td></tr>';
+      '<tr><td colspan="4" class="px-4 py-10 text-center text-sm text-gray-500 leading-relaxed">Belum ada hasil. Isi <strong class="text-gray-400">keyword</strong>, <strong class="text-gray-400">lokasi</strong>, dan <strong class="text-gray-400">target</strong>, lalu klik <span class="text-[#0066cc] font-medium">Start Scraping</span>.<br/><span class="text-xs mt-2 block text-gray-600"><code class="text-gray-500">Mulai perjalanan sekarang</code></span></td></tr>';
     applyDashboardAggregates([]);
     return;
   }
@@ -631,7 +631,7 @@ function renderSessionsTable() {
 				<td class="px-4 py-4">
 					<p class="text-xs font-bold text-white">${escapeHtml(dt)}</p>
 					${badge}
-					<p class="text-[10px] text-gray-500 mt-1 truncate max-w-[160px]">${escapeHtml(s.keyword || "")}</p>
+					<p class="text-[10px] text-gray-500 mt-1 truncate max-w-40">${escapeHtml(s.keyword || "")}</p>
 				</td>
 				<td class="px-4 py-4 text-xs text-gray-400">${escapeHtml(s.location || "—")}</td>
 				<td class="px-4 py-4 text-right font-mono text-xs text-white font-bold">${typeof s.results === "number" ? s.results : "—"}</td>`;
